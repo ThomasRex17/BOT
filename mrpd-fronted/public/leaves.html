@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mazeretler · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>Mazeret Yönetimi</h1>
+            <p id="totalCount">Yükleniyor...</p>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-card-head">
+                <div class="tabs" id="statusTabs">
+                    <button class="tab-btn active" data-status="all">Tümü</button>
+                    <button class="tab-btn" data-status="pending">Bekleyen</button>
+                    <button class="tab-btn" data-status="approved">Onaylanmış</button>
+                    <button class="tab-btn" data-status="rejected">Reddedilmiş</button>
+                    <button class="tab-btn" data-status="expired">Süresi Dolan</button>
+                </div>
+                <button class="btn btn-primary" onclick="openCreateModal()">+ Mazeret Ekle</button>
+            </div>
+            
+            <div id="loadingDiv" class="loading"><div class="spinner"></div></div>
+            <div id="leavesContainer" style="display: none; padding: 14px;"></div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* staff değil */ }
+        if (!Perms.require(PERM.PAGE_LEAVES)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('leaves');
+
+let currentStatus = 'all';
+let allPersonnel = [];
+
+async function loadPersonnelList() {
+    try {
+        const res = await api.get('/personnel?limit=200');
+        allPersonnel = res.data.items;
+    } catch {}
+}
+
+async function loadLeaves() {
+    document.getElementById('loadingDiv').style.display = 'block';
+    document.getElementById('leavesContainer').style.display = 'none';
+    
+    try {
+        const res = await api.get(`/leaves?status=${currentStatus}`);
+        const leaves = res.data;
+        document.getElementById('totalCount').textContent = `${leaves.length} mazeret`;
+        
+        const c = document.getElementById('leavesContainer');
+        if (!leaves.length) {
+            c.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>Bu kategoride mazeret yok</div>';
+        } else {
+            c.innerHTML = leaves.map(l => renderLeaveCard(l)).join('');
+        }
+        
+        document.getElementById('loadingDiv').style.display = 'none';
+        c.style.display = 'block';
+    } catch (err) { document.getElementById('loadingDiv').innerHTML = `<div class="empty">${err.message}</div>`; }
+}
+
+function renderLeaveCard(l) {
+    const statusMap = {
+        pending: { label: 'Beklemede', class: 'pill-warn' },
+        approved: { label: 'Onaylandı', class: 'pill-success' },
+        rejected: { label: 'Reddedildi', class: 'pill-danger' },
+        expired: { label: 'Süresi Doldu', class: 'pill-mute' },
+    };
+    const s = statusMap[l.status] || statusMap.pending;
+    
+    return `
+        <div style="background: var(--bg-3); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 10px; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start;">
+            <div class="av">${(cleanName(l.ic_name) || '?')[0].toUpperCase()}</div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <strong style="font-size: 14px; color: #fff;">
+                        ${l.callsign ? `<span style="color: var(--text-mute);">[${l.callsign}]</span> ` : ''}
+                        ${escapeHtml(cleanName(l.ic_name))}
+                    </strong>
+                    <span class="pill ${s.class}">${s.label}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 6px;">
+                    📅 ${formatDate(l.starts_at)} → ${formatDate(l.ends_at)}
+                </div>
+                <div style="font-size: 13px; color: var(--text); margin-top: 4px;">
+                    <strong>Sebep:</strong> ${escapeHtml(l.reason)}
+                </div>
+                ${l.additional_info ? `<div style="font-size: 12px; color: var(--text-mute); margin-top: 4px;"><strong>Açıklama:</strong> ${escapeHtml(l.additional_info)}</div>` : ''}
+                ${l.review_note ? `<div style="font-size: 12px; color: var(--text-mute); margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border);"><strong>Yetkili Notu:</strong> ${escapeHtml(l.review_note)}</div>` : ''}
+                ${l.reviewed_by_username ? `<div style="font-size: 11px; color: var(--text-mute); margin-top: 4px;">İncelendi: ${escapeHtml(l.reviewed_by_username)} · ${formatDateTime(l.reviewed_at)}</div>` : ''}
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; min-width: 100px;">
+                ${l.status === 'pending' ? `
+                    <button class="btn btn-success btn-xs" onclick="approveLeave(${l.id})">✓ Onayla</button>
+                    <button class="btn btn-danger btn-xs" onclick="rejectLeave(${l.id})">✗ Reddet</button>
+                ` : ''}
+                <button class="btn btn-ghost btn-xs" onclick="deleteLeave(${l.id})">Sil</button>
+            </div>
+        </div>
+    `;
+}
+
+document.querySelectorAll('#statusTabs .tab-btn').forEach(b => {
+    b.addEventListener('click', () => {
+        document.querySelectorAll('#statusTabs .tab-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentStatus = b.dataset.status;
+        loadLeaves();
+    });
+});
+
+function openCreateModal() {
+    const options = allPersonnel.map(p => {
+        const icName = escapeHtml(cleanName(p.ic_name).split('|')[0].trim());
+        return `<option value="${p.id}">${p.callsign ? `${p.callsign} | ` : ''}${icName}</option>`;
+    }).join('');
+    
+    const today = new Date().toISOString().slice(0, 16);
+    
+    showModal({
+        title: 'Yeni Mazeret',
+        body: `
+            <form id="leaveForm">
+                <div class="form-group">
+                    <label>Personel *</label>
+                    <select name="personnel_id" required>
+                        <option value="">— Seç —</option>
+                        ${options}
+                    </select>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Başlangıç *</label>
+                        <input name="starts_at" type="datetime-local" required value="${today}" />
+                    </div>
+                    <div class="form-group">
+                        <label>Bitiş *</label>
+                        <input name="ends_at" type="datetime-local" required />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Sebep *</label>
+                    <input name="reason" required maxlength="500" placeholder="Hastalık, izin, sınav..." />
+                </div>
+                <div class="form-group">
+                    <label>Ek Açıklama</label>
+                    <textarea name="additional_info" maxlength="500"></textarea>
+                </div>
+            </form>
+        `,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: '+ Oluştur', class: 'btn-primary', onClick: async () => {
+                const fd = new FormData(document.getElementById('leaveForm'));
+                const data = {
+                    personnel_id: parseInt(fd.get('personnel_id')),
+                    starts_at: new Date(fd.get('starts_at')).toISOString(),
+                    ends_at: new Date(fd.get('ends_at')).toISOString(),
+                    reason: fd.get('reason'),
+                    additional_info: fd.get('additional_info') || null,
+                };
+                if (!data.personnel_id || !data.reason) { showError('Tüm alanları doldur'); return; }
+                try {
+                    await api.post('/leaves', data);
+                    showSuccess('Mazeret oluşturuldu');
+                    closeModal();
+                    loadLeaves();
+                } catch (err) { showError(err.message); }
+            }},
+        ],
+    });
+}
+
+async function approveLeave(id) {
+    showModal({
+        title: 'Mazeret Onayla',
+        body: `
+            <form id="approveForm">
+                <div class="form-group">
+                    <label>Onay Notu (opsiyonel)</label>
+                    <textarea name="note" placeholder="İyi dinlen..."></textarea>
+                </div>
+            </form>
+        `,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: '✓ Onayla', class: 'btn-success', onClick: async () => {
+                const fd = new FormData(document.getElementById('approveForm'));
+                try {
+                    await api.put(`/leaves/${id}/approve`, { note: fd.get('note') || '' });
+                    showSuccess('Mazeret onaylandı');
+                    closeModal();
+                    loadLeaves();
+                } catch (err) { showError(err.message); }
+            }},
+        ],
+    });
+}
+
+async function rejectLeave(id) {
+    showModal({
+        title: 'Mazeret Reddet',
+        body: `
+            <form id="rejectForm">
+                <div class="form-group">
+                    <label>Reddetme Sebebi *</label>
+                    <textarea name="note" required placeholder="Sebep girin..."></textarea>
+                </div>
+            </form>
+        `,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: '✗ Reddet', class: 'btn-danger', onClick: async () => {
+                const fd = new FormData(document.getElementById('rejectForm'));
+                const note = fd.get('note');
+                if (!note) { showError('Sebep gerekli'); return; }
+                try {
+                    await api.put(`/leaves/${id}/reject`, { note });
+                    showSuccess('Mazeret reddedildi');
+                    closeModal();
+                    loadLeaves();
+                } catch (err) { showError(err.message); }
+            }},
+        ],
+    });
+}
+
+function deleteLeave(id) {
+    showConfirm('Bu mazeret kaydını silmek istediğine emin misin?', async () => {
+        try {
+            await api.delete(`/leaves/${id}`);
+            showSuccess('Silindi');
+            loadLeaves();
+        } catch (err) { showError(err.message); }
+    });
+}
+
+(async () => { await loadPersonnelList(); loadLeaves(); })();
+setInterval(() => { if (!document.getElementById('modal-bd')) loadLeaves(); }, 20000);
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Administrator/Desktop/mrpd-backend/routes/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Administrator\\Desktop\\mrpd-backend\\routes",
+      "C:\\Users\\Administrator\\Desktop\\mrpd-backend"
+    ]
+  }
+}

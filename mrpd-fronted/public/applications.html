@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Başvurular · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>Başvuru Yönetimi</h1>
+            <p id="totalCount">Yükleniyor...</p>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-card-head">
+                <div class="tabs" id="statusTabs">
+                    <button class="tab-btn active" data-status="all">Tümü</button>
+                    <button class="tab-btn" data-status="pending">Bekleyen</button>
+                    <button class="tab-btn" data-status="review">İncelemede</button>
+                    <button class="tab-btn" data-status="approved">Onaylanmış</button>
+                    <button class="tab-btn" data-status="rejected">Reddedilmiş</button>
+                </div>
+            </div>
+            <div id="loadingDiv" class="loading"><div class="spinner"></div></div>
+            <div id="appsContainer" style="display: none; padding: 14px;"></div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* staff değil */ }
+if (!Perms.require(PERM.PAGE_APPS)) { /* yönlendirildi */ }
+
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('applications');
+
+let currentStatus = 'all';
+let allApps = [];
+
+async function loadApps() {
+    document.getElementById('loadingDiv').style.display = 'block';
+    document.getElementById('appsContainer').style.display = 'none';
+    
+    try {
+        const res = await api.get(`/applications?status=${currentStatus}`);
+        allApps = res.data;
+        document.getElementById('totalCount').textContent = `${allApps.length} başvuru`;
+        
+        const c = document.getElementById('appsContainer');
+        if (!allApps.length) {
+            c.innerHTML = '<div class="empty"><div class="empty-icon">📝</div>Başvuru yok</div>';
+        } else {
+            c.innerHTML = allApps.map(a => renderAppRow(a)).join('');
+        }
+        
+        document.getElementById('loadingDiv').style.display = 'none';
+        c.style.display = 'block';
+    } catch (err) { document.getElementById('loadingDiv').innerHTML = `<div class="empty">${err.message}</div>`; }
+}
+
+function renderAppRow(a) {
+    const statusMap = {
+        pending: { label: 'Beklemede', class: 'pill-warn' },
+        review: { label: 'İncelemede', class: 'pill-primary' },
+        approved: { label: 'Onaylandı', class: 'pill-success' },
+        rejected: { label: 'Reddedildi', class: 'pill-danger' },
+    };
+    const s = statusMap[a.status] || statusMap.pending;
+    
+    return `
+        <div style="background: var(--bg-3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; display: grid; grid-template-columns: auto 1fr auto auto; gap: 14px; align-items: center; cursor: pointer; transition: all 0.15s;" onclick="viewApp(${a.id})" onmouseover="this.style.borderColor='var(--border-strong)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div class="av">${(a.applicant_name || '?')[0].toUpperCase()}</div>
+            <div>
+                <div style="font-weight: 600; font-size: 14px; color: #fff;">${escapeHtml(a.applicant_name)}</div>
+                <div style="font-size: 11px; color: var(--text-mute); margin-top: 2px;">
+                    ${escapeHtml(a.form_title)} · ${formatDateTime(a.submitted_at)}
+                </div>
+            </div>
+            <span class="pill ${s.class}">${s.label}</span>
+            <div onclick="event.stopPropagation()" style="display: flex; gap: 4px;">
+                ${(a.status === 'pending' || a.status === 'review') ? `
+                    <button class="btn btn-success btn-xs" onclick="approveApp(${a.id})">✓</button>
+                    <button class="btn btn-danger btn-xs" onclick="rejectApp(${a.id})">✗</button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function viewApp(id) {
+    const app = allApps.find(a => a.id === id);
+    if (!app) return;
+    
+    // Backend farklı field isimleri kullanabiliyor — hepsini dene
+    const rawAnswers = app.answers || app.responses || app.data || app.form_data || {};
+    // Eğer JSON string olarak geldiyse parse et
+    let answers = rawAnswers;
+    if (typeof answers === 'string') {
+        try { answers = JSON.parse(answers); } catch { answers = {}; }
+    }
+    
+    // Form sorularını da çek — eğer questions varsa daha güzel göstereceğiz
+    const questions = app.form_questions || app.questions || null;
+    
+    let answersHtml = '';
+    
+    if (Array.isArray(answers) && answers.length) {
+        // Format A: [{question, answer}, ...]
+        answersHtml = answers.map((entry, i) => {
+            const q = entry.question || entry.q || entry.label || `Soru ${i+1}`;
+            const a = entry.answer || entry.a || entry.value || '';
+            return `
+                <div class="app-answer-item">
+                    <div class="q">${escapeHtml(q)}</div>
+                    <div class="a ${!String(a).trim() ? 'empty' : ''}">${escapeHtml(String(a)) || '— boş bırakıldı —'}</div>
+                </div>
+            `;
+        }).join('');
+    } else if (questions && Array.isArray(questions) && questions.length) {
+        // Format B: questions ayrı dizide, answers map olarak
+        answersHtml = questions.map((q, i) => {
+            const key = q.id || q.key || q.name || `q_${i}`;
+            const label = q.label || q.question || q.text || `Soru ${i+1}`;
+            const val = (answers[key] !== undefined ? answers[key] : '') || '';
+            return `
+                <div class="app-answer-item">
+                    <div class="q">${escapeHtml(label)}</div>
+                    <div class="a ${!String(val).trim() ? 'empty' : ''}">${escapeHtml(String(val)) || '— boş bırakıldı —'}</div>
+                </div>
+            `;
+        }).join('');
+    } else if (typeof answers === 'object' && answers !== null && Object.keys(answers).length) {
+        // Format C: { question_key: answer, ... } — eski davranış
+        answersHtml = Object.entries(answers).map(([k, v]) => `
+            <div class="app-answer-item">
+                <div class="q">${escapeHtml(k)}</div>
+                <div class="a ${!String(v).trim() ? 'empty' : ''}">${escapeHtml(String(v)) || '— boş bırakıldı —'}</div>
+            </div>
+        `).join('');
+    }
+    
+    showModal({
+        title: app.applicant_name,
+        subtitle: `${app.form_title || 'Başvuru'} · ${formatDateTime(app.submitted_at)}`,
+        size: 'lg',
+        body: `
+            <div style="background: var(--bg-3); padding: 14px; border-radius: 8px; margin-bottom: 18px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-mute); text-transform: uppercase;">Email</div>
+                        <div style="font-size: 12px; margin-top: 2px;">${escapeHtml(app.applicant_email || '—')}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-mute); text-transform: uppercase;">Sicil</div>
+                        <div style="font-size: 12px; margin-top: 2px;">${escapeHtml(app.applicant_civ_id || '—')}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-mute); text-transform: uppercase;">Discord</div>
+                        <div style="font-size: 12px; margin-top: 2px; font-family: monospace;">${escapeHtml(app.applicant_discord_id || '—')}</div>
+                    </div>
+                </div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">📋 Sorulara Verilen Cevaplar</div>
+            <div class="app-answers-panel">
+                ${answersHtml || `
+                    <div style="text-align: center; padding: 24px; color: var(--text-mute); font-size: 13px;">
+                        <div style="font-size: 32px; margin-bottom: 8px; opacity: 0.5;">📭</div>
+                        Bu başvuruda cevap kaydı bulunamadı.<br>
+                        <span style="font-size: 11px;">(Backend "answers" alanını döndürmüyor olabilir)</span>
+                    </div>
+                `}
+            </div>
+            ${app.review_note ? `<div style="margin-top: 16px; padding: 12px; background: var(--primary-soft); border: 1px solid var(--border-strong); border-radius: 8px;"><strong>Yetkili Notu:</strong> ${escapeHtml(app.review_note)}</div>` : ''}
+        `,
+        buttons: (app.status === 'pending' || app.status === 'review') ? [
+            { id: 'review', label: '👁 İncele', class: 'btn-ghost', onClick: () => reviewApp(id) },
+            { id: 'reject', label: '✗ Reddet', class: 'btn-danger', onClick: () => rejectApp(id) },
+            { id: 'approve', label: '✓ Onayla', class: 'btn-success', onClick: () => approveApp(id) },
+        ] : [
+            { id: 'close', label: 'Kapat', class: 'btn-ghost', onClick: closeModal },
+        ],
+    });
+}
+
+async function approveApp(id) {
+    closeModal();
+    showModal({
+        title: 'Başvuru Onayla',
+        body: `<form id="approveForm"><div class="form-group"><label>Onay Notu</label><textarea name="note"></textarea></div></form>`,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'ok', label: '✓ Onayla', class: 'btn-success', onClick: async () => {
+                const fd = new FormData(document.getElementById('approveForm'));
+                try {
+                    await api.put(`/applications/${id}/approve`, { note: fd.get('note') || '' });
+                    showSuccess('Başvuru onaylandı');
+                    closeModal();
+                    loadApps();
+                } catch (err) { showError(err.message); }
+            }},
+        ],
+    });
+}
+
+async function rejectApp(id) {
+    closeModal();
+    showModal({
+        title: 'Başvuru Reddet',
+        body: `<form id="rejectForm"><div class="form-group"><label>Reddetme Sebebi</label><textarea name="note"></textarea></div></form>`,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'ok', label: '✗ Reddet', class: 'btn-danger', onClick: async () => {
+                const fd = new FormData(document.getElementById('rejectForm'));
+                try {
+                    await api.put(`/applications/${id}/reject`, { note: fd.get('note') || '' });
+                    showSuccess('Başvuru reddedildi');
+                    closeModal();
+                    loadApps();
+                } catch (err) { showError(err.message); }
+            }},
+        ],
+    });
+}
+
+async function reviewApp(id) {
+    try {
+        await api.put(`/applications/${id}/review`);
+        showSuccess('İncelemeye alındı');
+        closeModal();
+        loadApps();
+    } catch (err) { showError(err.message); }
+}
+
+document.querySelectorAll('#statusTabs .tab-btn').forEach(b => {
+    b.addEventListener('click', () => {
+        document.querySelectorAll('#statusTabs .tab-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentStatus = b.dataset.status;
+        loadApps();
+    });
+});
+
+loadApps();
+setInterval(() => { if (!document.getElementById('modal-bd')) loadApps(); }, 20000);
+</script>
+</body>
+</html>

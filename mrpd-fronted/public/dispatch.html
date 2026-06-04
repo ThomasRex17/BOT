@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>📡 Dispatch · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+/* ─── Layout ─── */
+.disp-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
+@media (max-width: 1100px) { .disp-layout { grid-template-columns: 1fr; } }
+
+/* ─── Birim oluştur barı ─── */
+.unit-create-bar {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 14px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+.unit-create-bar > span { font-size: 11px; color: var(--text-mute); font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; margin-right: 4px; }
+.unit-create-btn {
+    padding: 7px 13px;
+    border-radius: 8px;
+    border: 1px solid;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    transition: all 0.15s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(0,0,0,0.4);
+}
+.unit-create-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); filter: brightness(1.2); }
+.unit-create-btn .badge { padding: 1px 6px; border-radius: 4px; font-size: 9px; background: rgba(0,0,0,0.3); }
+
+.disp-toolbar-actions { margin-left: auto; display: flex; gap: 6px; }
+.btn-mini { padding: 7px 12px; background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 7px; font-size: 12px; cursor: pointer; }
+.btn-mini:hover { background: var(--primary-soft); color: #fff; }
+.btn-mini.danger:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+
+/* ─── Personel paneli (drag source) ─── */
+.disp-side-card {
+    position: sticky; top: 90px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    max-height: calc(100vh - 110px);
+    display: flex; flex-direction: column;
+}
+.disp-side-head {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(180deg, rgba(34,197,94,0.1), transparent);
+}
+.disp-side-title { font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+.disp-side-count { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(34,197,94,0.2); color: #86efac; border: 1px solid rgba(34,197,94,0.3); }
+
+.disp-search { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.disp-search input { width: 100%; padding: 7px 10px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 7px; color: #fff; font-size: 12px; }
+.disp-search input:focus { outline: none; border-color: var(--primary); }
+
+.disp-person-list { overflow-y: auto; flex: 1; }
+.person-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: grab;
+    transition: background 0.12s;
+    user-select: none;
+}
+.person-item:hover { background: rgba(255,255,255,0.04); }
+.person-item:active { cursor: grabbing; }
+.person-item.dragging { opacity: 0.4; background: var(--primary-soft); }
+.person-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    display: grid; place-items: center;
+    color: #fff; font-weight: 700; font-size: 11px;
+    flex-shrink: 0;
+}
+.person-info { flex: 1; min-width: 0; }
+.person-name { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.person-callsign { font-size: 10px; color: var(--text-mute); }
+.person-grip { color: var(--text-mute); font-size: 14px; }
+
+/* ─── Birim grid ─── */
+.unit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+}
+.unit-card {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 2px solid var(--unit-color);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.15s ease;
+    position: relative;
+}
+.unit-card.drag-over {
+    box-shadow: 0 0 0 3px var(--unit-color), 0 12px 30px var(--unit-color);
+    transform: scale(1.02);
+}
+.unit-card.full { opacity: 0.85; }
+.unit-card.full::after {
+    content: 'DOLU';
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,0,0,0.7); color: #fff;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+}
+
+.unit-head {
+    padding: 12px 14px;
+    background: linear-gradient(135deg, var(--unit-color), color-mix(in srgb, var(--unit-color) 70%, black));
+    color: #fff;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.unit-callsign { font-weight: 800; font-size: 15px; letter-spacing: 0.5px; }
+.unit-actions { display: flex; gap: 4px; }
+.unit-act-btn {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: rgba(0,0,0,0.4); border: none; color: #fff;
+    cursor: pointer; font-size: 11px;
+    display: grid; place-items: center;
+}
+.unit-act-btn:hover { background: rgba(0,0,0,0.7); }
+
+.unit-body { padding: 12px 14px; min-height: 80px; }
+.unit-status-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.status-pill {
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 10px; font-weight: 700;
+    cursor: pointer; border: 1px solid transparent;
+    opacity: 0.5; transition: all 0.15s;
+}
+.status-pill:hover { opacity: 0.85; }
+.status-pill.active { opacity: 1; transform: scale(1.05); }
+.status-pill.available { background: rgba(34,197,94,0.15); color: #86efac; border-color: rgba(34,197,94,0.4); }
+.status-pill.patrol { background: rgba(59,130,246,0.15); color: #93c5fd; border-color: rgba(59,130,246,0.4); }
+.status-pill.busy { background: rgba(245,158,11,0.15); color: #fcd34d; border-color: rgba(245,158,11,0.4); }
+.status-pill.code-6 { background: rgba(239,68,68,0.15); color: #fca5a5; border-color: rgba(239,68,68,0.4); }
+.status-pill.code-4 { background: rgba(168,85,247,0.15); color: #d8b4fe; border-color: rgba(168,85,247,0.4); }
+.status-pill.panic { background: rgba(239,68,68,0.3); color: #fff; border-color: #ef4444; animation: pulse 1s infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 12px #ef4444; } }
+
+.unit-members { display: flex; flex-direction: column; gap: 6px; }
+.unit-member {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+}
+.unit-member-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--unit-color);
+    display: grid; place-items: center;
+    color: #fff; font-weight: 700; font-size: 10px;
+    flex-shrink: 0;
+}
+.unit-member-info { flex: 1; min-width: 0; }
+.unit-member-name { font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unit-member-cs { font-size: 10px; color: var(--text-mute); }
+.unit-member-rm { color: var(--text-mute); cursor: pointer; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+.unit-member-rm:hover { background: rgba(239,68,68,0.2); color: #fca5a5; }
+
+.unit-empty {
+    padding: 14px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 11px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.2);
+}
+
+.unit-foot {
+    padding: 8px 14px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 10px; color: var(--text-mute);
+}
+
+.disp-empty-state {
+    grid-column: 1 / -1;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-mute);
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+}
+.disp-empty-state .ico { font-size: 48px; margin-bottom: 10px; opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>📡 Dispatch Paneli</h1>
+            <p>Birim oluştur ve aktif personeli sürükle-bırak ile ata</p>
+        </div>
+        
+        <div class="stats-row" id="statsRow"></div>
+        
+        <div class="unit-create-bar" id="createBar">
+            <span>+ Birim Oluştur:</span>
+            <span style="color:var(--text-mute); font-size:12px;">Yükleniyor...</span>
+        </div>
+        
+        <div class="disp-layout">
+            <!-- SOL: Birimsiz Personel (DRAG SOURCE) -->
+            <div class="disp-side-card">
+                <div class="disp-side-head">
+                    <div class="disp-side-title">
+                        <span>👥</span>
+                        <span>Birimsiz Personel</span>
+                    </div>
+                    <span class="disp-side-count" id="availCount">0</span>
+                </div>
+                <div class="disp-search">
+                    <input id="personSearch" type="text" placeholder="🔍 İsim / callsign ara...">
+                </div>
+                <div class="disp-person-list" id="personList">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </div>
+            
+            <!-- SAĞ: Aktif Birimler (DROP TARGETS) -->
+            <div>
+                <div class="unit-grid" id="unitGrid">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('dispatch');
+
+let UNIT_TYPES = {};
+let allPersonnel = [];
+let units = [];
+let assignedIds = new Set();
+let searchQuery = '';
+
+// ─── Helpers ───
+function escapeHTML(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function initials(name) {
+    const cleaned = String(name ?? '').replace(/\[[^\]]+\]/g, '').replace(/\|.*$/, '').trim();
+    return cleaned.split(/\s+/).filter(Boolean).slice(0,2).map(p => p[0]?.toUpperCase()).join('') || '?';
+}
+function getName(p) {
+    let name = cleanName(String(p.ic_name || p.name || `#${p.id || '?'}`));
+    // [712] gibi callsign kısmını isimden temizle (callsign zaten ayrı gösteriliyor)
+    name = name.replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
+    return name || `#${p.id || '?'}`;
+}
+
+function getCallsign(p) {
+    if (!p || typeof p !== 'object') return '';
+    return String(
+        p.callsign || p.call_sign || p.callSign ||
+        p.badge || p.badgeNumber || p.badge_number ||
+        p.rozet || p.rozetKodu || p.rozet_kodu ||
+        ''
+    );
+}
+function getCallsign(p) { return p.callsign || p.badge || p.badgeNumber || ''; }
+function getId(p) { return p.id || p._id || p.userId; }
+
+const STATUS_LABELS = {
+    available: { label: 'Hazır', icon: '🟢' },
+    patrol: { label: 'Devriyede', icon: '🚓' },
+    busy: { label: 'Meşgul', icon: '🟡' },
+    'code-6': { label: 'Code 6', icon: '🔴' },
+    'code-4': { label: 'Code 4', icon: '✅' },
+    panic: { label: 'PANIC!', icon: '🚨' },
+};
+
+// ─── Birim oluştur barı ───
+function renderCreateBar() {
+    const bar = document.getElementById('createBar');
+    bar.innerHTML = `<span>+ Birim Oluştur:</span>` +
+        Object.entries(UNIT_TYPES).map(([code, cfg]) => `
+            <button class="unit-create-btn" 
+                    style="border-color: ${cfg.color}; background: linear-gradient(135deg, ${cfg.color}33, ${cfg.color}11);"
+                    onclick="createUnit('${code}')"
+                    title="${cfg.desc} · Kapasite: ${cfg.capacity}">
+                <span style="color:${cfg.color}; font-weight:900;">${code}</span>
+                <span>${cfg.name}</span>
+                <span class="badge">${cfg.capacity}👤</span>
+            </button>
+        `).join('') +
+        `<div class="disp-toolbar-actions">
+            <button class="btn-mini" onclick="loadAll()">🔄 Yenile</button>
+            <button class="btn-mini danger" onclick="resetAllUnits()">🗑 Tümünü Sil</button>
+        </div>`;
+}
+
+// ─── Personel listesi (drag source) ───
+function renderPersonnel() {
+    const el = document.getElementById('personList');
+    let list = allPersonnel.filter(p => !assignedIds.has(String(getId(p))));
+    
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        list = list.filter(p => 
+            getName(p).toLowerCase().includes(q) ||
+            String(getCallsign(p)).toLowerCase().includes(q)
+        );
+    }
+    
+    document.getElementById('availCount').textContent = list.length;
+    
+    if (!list.length) {
+        el.innerHTML = `<div style="padding:30px 16px; text-align:center; color:var(--text-mute); font-size:12px;">
+            <div style="font-size:36px; opacity:0.3;">✨</div>
+            ${searchQuery ? 'Sonuç yok' : 'Tüm personel atanmış'}
+        </div>`;
+        return;
+    }
+    
+    el.innerHTML = list.map(p => {
+        const id = getId(p);
+        const name = getName(p);
+        const cs = getCallsign(p);
+        return `
+            <div class="person-item"
+                 draggable="true"
+                 data-id="${id}"
+                 data-name="${escapeHTML(name)}"
+                 data-callsign="${escapeHTML(cs)}"
+                 ondragstart="handleDragStart(event)"
+                 ondragend="handleDragEnd(event)">
+                <div class="person-avatar">${initials(name)}</div>
+                <div class="person-info">
+                    <div class="person-name">${escapeHTML(name)}</div>
+                    <div class="person-callsign">${cs ? `[${escapeHTML(cs)}]` : '— Callsign yok'}</div>
+                </div>
+                <span class="person-grip">⋮⋮</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// ─── Dispatch durumu paneli ───────────────────────────────
+function renderDispatchPanel() {
+    const dispUnits = units.filter(u =>
+        u.type === 'DISP' || u.type_code === 'DISP' ||
+        (u.callsign || '').toUpperCase().includes('DISP') ||
+        (u.typeName || '').toUpperCase().includes('DISP') ||
+        u.members?.some(m => (m.callsign || '').toUpperCase().includes('DISP'))
+    );
+    const hasDispatcher = dispUnits.some(u => u.members.length > 0);
+
+    let panel = document.getElementById('dispatchRolePanel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'dispatchRolePanel';
+        panel.style.cssText = 'margin-bottom:14px;';
+        document.getElementById('statsRow').insertAdjacentElement('afterend', panel);
+    }
+
+    const myId = String(Perms.discordId() || Auth.user()?.id || '');
+    const canManageDispatch = Perms.isSupervisor() || Perms.isCommand();
+    const canAssist = Perms.can(PERM.PAGE_PERSONNEL);
+    const myDispUnit = dispUnits.find(u => u.members.some(m => String(m.userId) === myId));
+    const iAmDispatcher = !!myDispUnit;
+
+    if (!hasDispatcher) {
+        panel.innerHTML = `
+            <div style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.05));border:1px solid rgba(99,102,241,0.4);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                <div style="font-size:26px;">📡</div>
+                <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#a5b4fc;margin-bottom:2px;">Aktif Dispatch Yok</div><div style="font-size:12px;color:var(--text-mute);">Şu an aktif bir dispatch görevlisi bulunmuyor.</div></div>
+                ${canManageDispatch ? `<button onclick="takeOverDispatch()" style="padding:9px 18px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">📡 Dispatch'i Devral</button>` : ''}
+            </div>`;
+    } else {
+        const dispatchers = dispUnits.flatMap(u => u.members);
+        const dispNames = dispatchers.map(m => escapeHTML(m.name || m.callsign || '—')).join(', ');
+        panel.innerHTML = `
+            <div style="background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(34,197,94,0.04));border:1px solid rgba(34,197,94,0.35);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                <div style="font-size:22px;">📡</div>
+                <div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#86efac;margin-bottom:2px;">Aktif Dispatch</div><div style="font-size:13px;color:#fff;">${dispNames}</div></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    ${canAssist ? `<button onclick="addAssistDispatch(${dispUnits[0]?.id})" style="padding:7px 13px;background:rgba(34,197,94,0.2);color:#86efac;border:1px solid rgba(34,197,94,0.4);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">👤 Yardımcı Dispatch Ver</button>` : ''}
+                    ${iAmDispatcher ? `<button onclick="leaveDispatch(${myDispUnit.id},'${myId}')" style="padding:7px 13px;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">✕ Dispatch'i Bırak</button>` : ''}
+                    ${!iAmDispatcher && canManageDispatch ? `<button onclick="takeOverDispatch()" style="padding:7px 13px;background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">📡 Devral</button>` : ''}
+                </div>
+            </div>`;
+    }
+}
+
+async function takeOverDispatch() {
+    if (!Perms.isSupervisor() && !Perms.isCommand()) {
+        showError('Dispatch almak için en az Sergeant/Supervisor yetkisi gereklidir');
+        return;
+    }
+    const user = Auth.user();
+    const myId = String(Perms.discordId() || user?.id || '');
+    const myName = user?.discord_display_name || user?.display_name || user?.discord_username || user?.username || '?';
+
+    // DISP tipini ara; yoksa mevcut tiplerin ilkini kullan
+    let dispType = Object.keys(UNIT_TYPES).find(k =>
+        k.toUpperCase().includes('DISP') || k.toUpperCase().includes('DISPATCH')
+    );
+    if (!dispType) {
+        dispType = Object.keys(UNIT_TYPES)[0] || 'DISP';
+    }
+
+    try {
+        const res = await api.post('/dispatch/units', { type: dispType });
+        if (!res?.data?.id) { showError(res?.message || 'Birim oluşturulamadı'); return; }
+        await api.post(`/dispatch/units/${res.data.id}/members`, { userId: myId, name: myName, callsign: 'DISP' });
+        showSuccess('📡 Dispatch görevini devraldınız');
+        await loadAll();
+    } catch (err) {
+        showError('Dispatch devralinamadı: ' + err.message);
+    }
+}
+
+async function addAssistDispatch(unitId) {
+    if (!unitId) { showError('Dispatch birimi bulunamadı'); return; }
+    const unassigned = allPersonnel.filter(p => !assignedIds.has(String(getId(p))));
+    const options = unassigned.map(p =>
+        `<option value="${getId(p)}" data-name="${escapeHTML(getName(p))}">${escapeHTML(getName(p))}</option>`
+    ).join('');
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="_dispMod" onclick="if(event.target.id==='_dispMod')this.remove()"
+             style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;">
+            <div style="background:var(--bg-2,#1a1a2e);border:1px solid var(--border,#333);border-radius:14px;max-width:420px;width:100%;padding:22px;">
+                <h3 style="color:#fff;margin:0 0 16px;font-size:15px;">👤 Yardımcı Dispatch Ata</h3>
+                <select id="_dispSel" style="width:100%;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:13px;margin-bottom:14px;">
+                    <option value="">— Personel Seç —</option>${options}
+                </select>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button onclick="document.getElementById('_dispMod').remove()" style="padding:8px 16px;background:transparent;color:#aaa;border:1px solid #333;border-radius:8px;cursor:pointer;">İptal</button>
+                    <button onclick="confirmAssistDispatch(${unitId})" style="padding:8px 16px;background:#22c55e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;">✅ Ata</button>
+                </div>
+            </div>
+        </div>`);
+}
+
+async function confirmAssistDispatch(unitId) {
+    const sel = document.getElementById('_dispSel');
+    if (!sel?.value) { showError('Personel seç'); return; }
+    const name = sel.options[sel.selectedIndex].dataset.name || sel.options[sel.selectedIndex].text;
+    try {
+        await api.post(`/dispatch/units/${unitId}/members`, { userId: sel.value, name, callsign: 'DISP-Y' });
+        document.getElementById('_dispMod')?.remove();
+        showSuccess('Yardımcı dispatch atandı');
+        await loadAll();
+    } catch (err) { showError('Atama hatası: ' + err.message); }
+}
+
+async function leaveDispatch(unitId, userId) {
+    try {
+        await api.delete(`/dispatch/units/${unitId}/members/${userId}`);
+        showSuccess('Dispatch görevi bırakıldı');
+        await loadAll();
+    } catch (err) { showError('Hata: ' + err.message); }
+}
+
+// ─── Birim grid ───
+function renderUnits() {
+    const el = document.getElementById('unitGrid');
+    if (!units.length) {
+        el.innerHTML = `<div class="disp-empty-state">
+            <div class="ico">📡</div>
+            <div style="font-size:14px; margin-bottom:6px; color:#fff;">Henüz birim yok</div>
+            <div>Yukarıdan bir birim tipi seçerek başla</div>
+        </div>`;
+        return;
+    }
+    
+    el.innerHTML = units.map(u => {
+        const isFull = u.members.length >= u.capacity;
+        return `
+            <div class="unit-card ${isFull ? 'full' : ''}"
+                 style="--unit-color: ${u.color};"
+                 data-unit-id="${u.id}"
+                 ondragover="handleDragOver(event)"
+                 ondragleave="handleDragLeave(event)"
+                 ondrop="handleDrop(event, ${u.id})">
+                
+                <div class="unit-head">
+                    <div class="unit-callsign">${escapeHTML(u.callsign)}</div>
+                    <div class="unit-actions">
+                        <button class="unit-act-btn" onclick="deleteUnit(${u.id})" title="Birimi sil">🗑</button>
+                    </div>
+                </div>
+                
+                <div class="unit-body">
+                    <div class="unit-status-row">
+                        ${Object.entries(STATUS_LABELS).map(([k, v]) => `
+                            <button class="status-pill ${k} ${u.status === k ? 'active' : ''}"
+                                    onclick="changeStatus(${u.id}, '${k}')"
+                                    title="${v.label}">
+                                ${v.icon} ${v.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="unit-members">
+                        ${u.members.map(m => `
+                            <div class="unit-member">
+                                <div class="unit-member-avatar">${initials(m.name)}</div>
+                                <div class="unit-member-info">
+                                    <div class="unit-member-name">${escapeHTML(m.name)}</div>
+                                    <div class="unit-member-cs">${m.callsign ? `[${escapeHTML(m.callsign)}]` : ''}</div>
+                                </div>
+                                <span class="unit-member-rm" onclick="removeMember(${u.id}, '${m.userId}')" title="Çıkar">✕</span>
+                            </div>
+                        `).join('')}
+                        ${u.members.length === 0 ? `<div class="unit-empty">↓ Personel sürükleyip bırak</div>` : ''}
+                    </div>
+                </div>
+                
+                <div class="unit-foot">
+                    <span>${u.members.length}/${u.capacity} kişi · ${u.typeName}</span>
+                    <span>${new Date(u.createdAt).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ─── Stats ───
+function renderStats() {
+    const totalUnits = units.length;
+    const totalAssigned = assignedIds.size;
+    const totalAvail = allPersonnel.length - totalAssigned;
+    const onCode6 = units.filter(u => u.status === 'code-6' || u.status === 'panic').length;
+    
+    document.getElementById('statsRow').innerHTML = `
+        <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">📡</div><div class="stat-content"><div class="label">Aktif Birim</div><div class="value">${totalUnits}</div></div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#22c55e,#15803d);">✅</div><div class="stat-content"><div class="label">Atanmış</div><div class="value">${totalAssigned}</div></div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">⏳</div><div class="stat-content"><div class="label">Birimsiz</div><div class="value">${totalAvail}</div></div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#ef4444,#b91c1c);">🚨</div><div class="stat-content"><div class="label">Olay Yerinde</div><div class="value">${onCode6}</div></div></div>
+    `;
+}
+
+// ─── DRAG & DROP ───
+let draggedData = null;
+
+function handleDragStart(e) {
+    const el = e.currentTarget;
+    el.classList.add('dragging');
+    draggedData = {
+        id: el.dataset.id,
+        name: el.dataset.name,
+        callsign: el.dataset.callsign,
+    };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
+}
+
+function handleDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    draggedData = null;
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    e.currentTarget.classList.remove('drag-over');
+}
+
+async function handleDrop(e, unitId) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    let data = draggedData;
+    if (!data) {
+        try { data = JSON.parse(e.dataTransfer.getData('text/plain')); }
+        catch { return; }
+    }
+    if (!data || !data.id) return;
+    
+    try {
+        const res = await api.post(`/dispatch/units/${unitId}/members`, {
+            userId: data.id,
+            callsign: data.callsign,
+            name: data.name,
+        });
+        if (res.success) {
+            showSuccess(`${data.name} birime atandı`);
+            await loadAll();
+        } else {
+            showError(res.message || 'Atama başarısız');
+        }
+    } catch (err) {
+        showError('Atama hatası: ' + err.message);
+    }
+}
+
+// ─── Actions ───
+async function createUnit(type) {
+    try {
+        const res = await api.post('/dispatch/units', { type });
+        if (res.success) {
+            showSuccess(`${res.data.callsign} oluşturuldu`);
+            await loadAll();
+        }
+    } catch (err) { showError('Birim oluşturulamadı: ' + err.message); }
+}
+
+async function deleteUnit(id) {
+    const u = units.find(x => x.id === id);
+    if (!confirm(`${u?.callsign || 'Bu birim'} silinsin mi?`)) return;
+    try {
+        await api.delete(`/dispatch/units/${id}`);
+        showSuccess('Birim silindi');
+        await loadAll();
+    } catch (err) { showError('Silme hatası: ' + err.message); }
+}
+
+async function removeMember(unitId, userId) {
+    try {
+        await api.delete(`/dispatch/units/${unitId}/members/${userId}`);
+        await loadAll();
+    } catch (err) { showError('Çıkarma hatası: ' + err.message); }
+}
+
+async function changeStatus(unitId, status) {
+    try {
+        await api.patch(`/dispatch/units/${unitId}/status`, { status });
+        await loadAll();
+    } catch (err) { showError('Durum değişmedi: ' + err.message); }
+}
+
+async function resetAllUnits() {
+    if (!confirm('TÜM birimler silinecek! Emin misin?')) return;
+    if (!confirm('Son uyarı: Tüm aktif birimler silinecek. DEVAM?')) return;
+    try {
+        await api.delete('/dispatch/units');
+        showSuccess('Tüm birimler temizlendi');
+        await loadAll();
+    } catch (err) { showError('Sıfırlama hatası: ' + err.message); }
+}
+
+// ─── Yükle ───
+async function loadAll() {
+    try {
+        let dutyOnly = [];
+        let dutyDetected = false;
+        
+        // Yöntem 1: Direkt duty endpoint dene
+        const dutyEndpoints = ['/duty/active', '/duty/online', '/personnel/on-duty', '/active-duty'];
+        for (const ep of dutyEndpoints) {
+            try {
+                const r = await api.get(ep);
+                const data = r?.data || r?.members || r?.personnel || r;
+                if (Array.isArray(data) && data.length >= 0) {
+                    dutyOnly = data;
+                    dutyDetected = true;
+                    console.log(`[Dispatch] Duty endpoint bulundu: ${ep}`);
+                    break;
+                }
+            } catch {}
+        }
+        
+        // Yöntem 2: Tüm personeli al, duty field'ına göre filtrele
+        if (!dutyDetected) {
+            const pRes = await api.get('/personnel?limit=500').catch(() => api.get('/personnel'));
+            let allPpl = pRes?.data?.personnel || pRes?.data?.items || pRes?.data || pRes?.personnel || [];
+            if (!Array.isArray(allPpl)) allPpl = [];
+            
+            // Yaygın duty field isimlerini dene
+            const dutyFields = ['isOnDuty', 'is_on_duty', 'onDuty', 'on_duty', 'dutyStatus', 'duty_status', 'duty', 'isDuty'];
+            const hasDutyField = allPpl.some(p => dutyFields.some(f => f in p));
+            
+            if (hasDutyField) {
+                dutyOnly = allPpl.filter(p => 
+                    p.isOnDuty === true || p.is_on_duty === true ||
+                    p.onDuty === true || p.on_duty === true ||
+                    p.duty === true || p.isDuty === true ||
+                    p.dutyStatus === 'on' || p.dutyStatus === 'active' || p.dutyStatus === true ||
+                    p.duty_status === 'on' || p.duty_status === 'active' || p.duty_status === true
+                );
+                dutyDetected = true;
+                console.log(`[Dispatch] Duty field bulundu, ${dutyOnly.length}/${allPpl.length} mesaide`);
+            } else {
+                // Yöntem 3: Hiç duty bilgisi yoksa hepsini göster + uyarı
+                console.warn('[Dispatch] Duty field/endpoint yok, tüm personel listeleniyor');
+                dutyOnly = allPpl;
+                showError('⚠️ Duty endpoint bulunamadı, tüm personel gösteriliyor. Backend admin\'ine duty endpoint adını sor.');
+            }
+        }
+        
+        allPersonnel = dutyOnly;
+        
+        if (allPersonnel.length > 0) {
+            console.log('[Dispatch] İlk personel objesi:', allPersonnel[0]);
+            console.log('[Dispatch] Field listesi:', Object.keys(allPersonnel[0]));
+        }
+
+        
+
+        // Birim verisi
+        const uRes = await api.get('/dispatch/units');
+        units = uRes.data || [];
+        UNIT_TYPES = uRes.types || UNIT_TYPES;
+        
+        assignedIds = new Set();
+        units.forEach(u => u.members.forEach(m => assignedIds.add(String(m.userId))));
+        
+        renderCreateBar();
+        renderStats();
+        renderDispatchPanel();
+        renderPersonnel();
+        renderUnits();
+    } catch (err) {
+        showError('Veriler yüklenemedi: ' + err.message);
+        console.error(err);
+        document.getElementById('unitGrid').innerHTML = `<div class="disp-empty-state"><div class="ico">⚠️</div>Veri yüklenemedi: ${escapeHTML(err.message)}</div>`;
+    }
+}
+
+// Search
+document.getElementById('personSearch').addEventListener('input', e => {
+    searchQuery = e.target.value.trim();
+    renderPersonnel();
+});
+
+loadAll();
+// 15 saniyede bir otomatik yenile
+setInterval(loadAll, 15000);
+</script>
+</body>
+</html>

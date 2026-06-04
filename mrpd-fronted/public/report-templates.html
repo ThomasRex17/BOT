@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rapor Şablonları · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>📄 Rapor Şablonları</h1>
+            <p>Olay, tutuklama ve trafik raporları için şablonlar</p>
+        </div>
+        
+        <div id="templatesContainer">
+            <div class="loading"><div class="spinner"></div></div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* staff değil */ }
+        if (!Perms.require(PERM.PAGE_REPORTS)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('reports');
+
+async function loadTemplates() {
+    try {
+        const res = await api.get('/reports/templates');
+        const templates = res.data;
+        
+        const c = document.getElementById('templatesContainer');
+        if (!templates.length) {
+            c.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Henüz şablon yok</div>';
+            return;
+        }
+        
+        c.innerHTML = templates.map(t => `
+            <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <div>
+                        <h3 style="color: #fff; font-size: 16px; margin-bottom: 4px;">📄 ${escapeHtml(t.name)}</h3>
+                        <p style="color: var(--text-mute); font-size: 13px;">${escapeHtml(t.description || '')}</p>
+                    </div>
+                    <span class="pill pill-muted">${t.fields.length} alan</span>
+                </div>
+                <button class="btn btn-primary" onclick="useTemplate('${t.id}')">Bu Şablonu Kullan</button>
+            </div>
+        `).join('');
+    } catch (err) {
+        document.getElementById('templatesContainer').innerHTML = `<div class="empty">${err.message}</div>`;
+    }
+}
+
+async function useTemplate(id) {
+    try {
+        const res = await api.get('/reports/templates');
+        const template = res.data.find(t => String(t.id) === String(id));
+        if (!template) return;
+        
+        const fieldsHtml = template.fields.map((f, i) => `
+    <div class="form-group">
+        <label for="field_${i}">${escapeHtml(f.label)} ${f.required ? '*' : ''}</label>
+        ${f.type === 'textarea' 
+            ? `<textarea id="field_${i}" name="field_${i}" ${f.required ? 'required' : ''} maxlength="2000"></textarea>`
+            : `<input id="field_${i}" name="field_${i}" type="${f.type || 'text'}" ${f.required ? 'required' : ''} />`
+        }
+    </div>
+`).join('');
+        
+        showModal({
+            title: escapeHtml(template.name),
+            size: 'lg',
+            body: `
+                <form id="reportForm">
+                    <div class="form-group">
+                        <label>Rapor Başlığı *</label>
+                        <input name="title" required placeholder="Kısa bir başlık" />
+                    </div>
+                    ${fieldsHtml}
+                </form>
+            `,
+            buttons: [
+                { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+                { id: 'save', label: 'Raporu Kaydet', class: 'btn-primary', onClick: () => saveReport(id) },
+            ],
+        });
+    } catch (err) { showError(err.message); }
+}
+
+async function saveReport(templateId) {
+    const fd = new FormData(document.getElementById('reportForm'));
+    const content = {};
+    for (const [key, value] of fd.entries()) {
+        content[key] = value;
+    }
+    
+    const data = {
+        template_id: templateId,
+        title: fd.get('title'),
+        content: JSON.stringify(content),
+    };
+    
+    if (!data.title) { showError('Başlık gerekli'); return; }
+    
+    try {
+        await api.post('/reports', data);
+        showSuccess('Rapor kaydedildi');
+        closeModal();
+    } catch (err) { showError(err.message); }
+}
+
+loadTemplates();
+</script>
+</body>
+</html>

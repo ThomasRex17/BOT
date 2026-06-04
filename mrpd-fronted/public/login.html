@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Giriş · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div class="login-wrap">
+    <div class="login-side">
+        <div class="login-form-card">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
+                <div class="pub-brand-icon">🚔</div>
+                <div>
+                    <div style="font-size: 18px; font-weight: 700;" data-brand-name>Mission Row PD</div>
+                    <div style="font-size: 11px; color: var(--text-mute);">Personel Girişi</div>
+                </div>
+            </div>
+            
+            <h1>Tekrar Hoş Geldin 👋</h1>
+            <p>Personel paneline erişmek için giriş yapın. Ekipte değilseniz <a href="/apply.html" style="color: var(--primary-light); font-weight: 600;">başvuru sayfasını</a> ziyaret edin.</p>
+            
+            <div id="error" style="display:none; padding: 10px 14px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; border-radius: 8px; font-size: 13px; margin-bottom: 16px;"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Kullanıcı Adı</label>
+                    <input type="text" id="username" required placeholder="admin" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-login" id="submitBtn">Giriş Yap</button>
+            </form>
+            
+            <div class="divider-text"><span>veya</span></div>
+            
+            <a href="#" id="discordLoginBtn" class="btn-discord">
+                💬 Discord ile Giriş Yap
+            </a>
+            
+            <div style="text-align: center; margin-top: 24px; font-size: 13px; color: var(--text-mute);">
+                <a href="/home.html" style="color: var(--text-mute); text-decoration: none;">← Ana Menüye Dön</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="login-image"></div>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script>
+// Discord OAuth linkini api.js'teki API_HOST'tan ayarla
+document.getElementById('discordLoginBtn').href = `${API_HOST}/api/auth/discord`;
+
+if (Auth.isLoggedIn()) window.location.href = '/index.html';
+
+const form = document.getElementById('loginForm');
+const errorDiv = document.getElementById('error');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorDiv.style.display = 'none';
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Giriş yapılıyor...';
+    
+    try {
+        await Auth.login(username, password);
+        window.location.href = '/index.html';
+    } catch (err) {
+        errorDiv.textContent = err.message || 'Giriş yapılamadı';
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Giriş Yap';
+    }
+});
+</script>
+</body>
+</html>

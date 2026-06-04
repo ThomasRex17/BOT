@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Başvuru · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="navContainer"></div>
+
+<section class="section" style="text-align: center;">
+    <div class="section-badge">📋 BAŞVURU</div>
+    <h1 class="section-title">Başvuru <span class="accent">Formları</span></h1>
+    <p class="section-sub">Aşağıdaki formlardan birine başvurabilirsiniz</p>
+    
+    <div id="loadingDiv" class="loading" style="margin: 40px auto; max-width: 720px;">
+        <!-- Skeleton — başvuru formu kartları için -->
+        <div style="display:grid; gap:14px;">
+            <div class="p1-skeleton-card" style="height:96px; padding:18px;">
+                <div class="p1-skel-line w-70" style="height:18px; margin:4px 0 14px;"></div>
+                <div class="p1-skel-line w-40" style="height:12px; margin:8px 0;"></div>
+            </div>
+            <div class="p1-skeleton-card" style="height:96px; padding:18px;">
+                <div class="p1-skel-line w-50" style="height:18px; margin:4px 0 14px;"></div>
+                <div class="p1-skel-line w-70" style="height:12px; margin:8px 0;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="formListContainer" style="display: none;">
+        <div id="formList" class="apply-grid" style="text-align: left;"></div>
+        
+        <button class="apply-search-btn" onclick="checkStatus()">
+            🔍 Başvuru Durumu Sorgula
+        </button>
+    </div>
+    
+    <div id="formSubmitContainer" style="display: none; max-width: 720px; margin: 0 auto; text-align: left;"></div>
+</section>
+
+<a href="https://kateshi.gg" target="_blank" class="powered">⚡ Powered by Kateshi</a>
+
+<div id="footerContainer"></div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/pub-nav.js"></script>
+<script>
+document.getElementById('navContainer').innerHTML = renderPubNav('apply');
+document.getElementById('footerContainer').innerHTML = renderPubFooter();
+
+let allForms = [];
+
+async function loadForms() {
+    try {
+        const data = await fetchPublic('/applications/forms');
+        allForms = data.data || [];
+        
+        const list = document.getElementById('formList');
+        if (!allForms.length) {
+            list.innerHTML = `
+                <div class="empty">
+                    <div class="empty-icon">📭</div>
+                    <div>Şu anda aktif başvuru formu yok.</div>
+                </div>
+            `;
+        } else {
+            list.innerHTML = allForms.map(f => `
+                <a href="javascript:void(0)" onclick="openForm(${f.id})" class="apply-card">
+                    <div class="apply-content">
+                        <div class="apply-card-title">${escapeHtml(f.title)}</div>
+                        ${f.description ? `<div class="apply-card-desc">${escapeHtml(f.description.substring(0, 200))}${f.description.length > 200 ? '...' : ''}</div>` : ''}
+                        <div class="apply-card-meta">
+                            🕐 ${(f.questions || []).length} soru
+                        </div>
+                    </div>
+                    <div class="apply-arrow">›</div>
+                </a>
+            `).join('');
+        }
+        
+        document.getElementById('loadingDiv').style.display = 'none';
+        document.getElementById('formListContainer').style.display = 'block';
+    } catch (err) {
+        document.getElementById('loadingDiv').innerHTML = `<div class="empty"><div class="empty-icon">❌</div>Sunucuya bağlanılamadı</div>`;
+    }
+}
+
+function openForm(formId) {
+    const form = allForms.find(f => f.id === formId);
+    if (!form) return;
+    
+    if (form.requires_login && !Auth.isLoggedIn()) {
+        if (confirm('Bu form için giriş yapman gerekiyor. Login sayfasına gidelim mi?')) {
+            window.location.href = '/login.html';
+        }
+        return;
+    }
+    
+    document.getElementById('formListContainer').style.display = 'none';
+    
+    const questionsHtml = (form.questions || []).map((q, i) => `
+        <div class="form-group">
+            <label>${escapeHtml(q.label)} ${q.required ? '*' : ''}</label>
+            ${q.type === 'textarea' 
+                ? `<textarea name="q_${i}" ${q.required ? 'required' : ''} maxlength="2000" style="min-height: 80px;"></textarea>`
+                : `<input name="q_${i}" type="${q.type || 'text'}" ${q.required ? 'required' : ''} maxlength="500" />`
+            }
+        </div>
+    `).join('');
+    
+    document.getElementById('formSubmitContainer').innerHTML = `
+        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 16px; padding: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 24px;">
+                <div>
+                    <h2 style="font-size: 22px; color: #fff; margin-bottom: 6px;">📋 ${escapeHtml(form.title)}</h2>
+                    ${form.description ? `<p style="color: var(--text-mute); font-size: 13px; line-height: 1.6;">${escapeHtml(form.description)}</p>` : ''}
+                </div>
+                <button onclick="backToList()" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: var(--text-dim); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px;">← Geri</button>
+            </div>
+            
+            <form id="applyForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>Ad Soyad *</label>
+                        <input name="applicant_name" required maxlength="64" />
+                    </div>
+                    <div class="form-group">
+                        <label>E-posta</label>
+                        <input name="applicant_email" type="email" />
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>Sicil Numarası</label>
+                        <input name="applicant_civ_id" maxlength="16" />
+                    </div>
+                    <div class="form-group">
+                        <label>Discord ID</label>
+                        <input name="applicant_discord_id" maxlength="32" />
+                    </div>
+                </div>
+                <hr style="border-color: var(--border); margin: 16px 0;" />
+                ${questionsHtml || '<p style="color: var(--text-mute); font-size: 13px;">Bu form için ek soru yok.</p>'}
+                <div id="applyErr" style="display:none; color:#fca5a5; font-size:13px; padding:10px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; margin-top:12px;"></div>
+                <button type="submit" id="applySubmitBtn" class="btn-login" style="margin-top: 12px;">📤 Başvuruyu Gönder</button>
+            </form>
+        </div>
+    `;
+    
+    document.getElementById('formSubmitContainer').style.display = 'block';
+    
+    document.getElementById('applyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('applySubmitBtn');
+        const errEl = document.getElementById('applyErr');
+        if (errEl) errEl.style.display = 'none';
+        // Double-click koruması — buton devre dışı bırak
+        if (btn.disabled) return;
+        btn.disabled = true;
+        const origText = btn.textContent;
+        btn.textContent = '⏳ Gönderiliyor...';
+
+        const fd = new FormData(e.target);
+        const answers = {};
+        (form.questions || []).forEach((q, i) => {
+            answers[q.label] = fd.get(`q_${i}`) || '';
+        });
+        const data = {
+            form_id: form.id,
+            applicant_name: fd.get('applicant_name'),
+            applicant_email: fd.get('applicant_email') || null,
+            applicant_civ_id: fd.get('applicant_civ_id') || null,
+            applicant_discord_id: fd.get('applicant_discord_id') || null,
+            answers,
+        };
+        try {
+            const result = await fetchPublic('/applications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            
+            document.getElementById('formSubmitContainer').innerHTML = `
+                <div class="p1-reveal" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 16px; text-align: center; padding: 60px 32px;">
+                    <div style="font-size: 64px; margin-bottom: 16px;">🎉</div>
+                    <h2 style="color: #fff; font-size: 24px; margin-bottom: 12px;">Başvurun Alındı!</h2>
+                    <p style="color: var(--text-mute); font-size: 14px; margin-bottom: 24px;">Başvuru ID: <strong>#${result.data?.id ?? '—'}</strong></p>
+                    <a href="/home.html" class="btn-login" style="text-decoration: none; display: inline-block; max-width: 200px;">Anasayfaya Dön</a>
+                </div>
+            `;
+        } catch (err) {
+            if (errEl) {
+                errEl.textContent = 'Hata: ' + (err.message || 'Başvuru gönderilemedi');
+                errEl.style.display = 'block';
+            } else {
+                alert('Hata: ' + err.message);
+            }
+            // Hata olduysa kullanıcı düzeltip tekrar deneyebilsin
+            btn.disabled = false;
+            btn.textContent = origText;
+        }
+    });
+}
+
+function backToList() {
+    document.getElementById('formSubmitContainer').style.display = 'none';
+    document.getElementById('formListContainer').style.display = 'block';
+}
+
+function checkStatus() {
+    const civId = prompt('Sicil numaranı gir:');
+    if (!civId) return;
+    alert(`Sicil ${civId} için başvurular yakında listelenecek.`);
+}
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+loadForms();
+</script>
+</body>
+</html>

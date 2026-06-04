@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Birimler · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="navContainer"></div>
+
+<section class="section" style="text-align: center; padding-top: 60px;">
+    <div class="section-badge">📍 ORGANİZASYON YAPISI</div>
+    <h1 class="section-title">Departman <span class="accent">Birimleri</span></h1>
+    <p class="section-sub">Departmanımızın operasyonel birimleri</p>
+    
+    <div class="unit-tabs" id="unitTabs">
+        <button class="unit-tab active" data-cat="all">Tümü</button>
+        <button class="unit-tab" data-cat="air"><span>🚁</span> Air Support</button>
+        <button class="unit-tab" data-cat="cid"><span>🔍</span> CID</button>
+        <button class="unit-tab" data-cat="ert"><span>🚨</span> ERT</button>
+        <button class="unit-tab" data-cat="hsu"><span>🏎️</span> HSU</button>
+        <button class="unit-tab" data-cat="iad"><span>⚖️</span> IAD</button>
+        <button class="unit-tab" data-cat="k9"><span>🐕</span> K-9</button>
+        <button class="unit-tab" data-cat="motor"><span>🏍️</span> Motor</button>
+        <button class="unit-tab" data-cat="narcotic"><span>🚭</span> NEU</button>
+        <button class="unit-tab" data-cat="oss"><span>🛡️</span> OSS</button>
+        <button class="unit-tab" data-cat="upr"><span>👮</span> UPR</button>
+    </div>
+    
+    <div id="unitsList" class="unit-list" style="text-align: left;"></div>
+</section>
+
+<a href="https://kateshi.gg" target="_blank" class="powered">⚡ Powered by Kateshi</a>
+
+<div id="footerContainer"></div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/pub-nav.js"></script>
+<script>
+// Public sayfa: giriş gerekmez. Birimler herkese açık görünür.
+document.getElementById('navContainer').innerHTML = renderPubNav('units');
+document.getElementById('footerContainer').innerHTML = renderPubFooter();
+
+const UNITS = [
+    { 
+        cat: 'air', name: 'Air Support Division', code: 'ASD',
+        icon: '🚁', img: '🚁',
+        desc: 'Havadan devriye uçuşları yapmak kara ekiplerine anlık görsel destek sağlamak takip operasyonlarında hava desteği vermek kayıp şahıs aramalarına katılmak ve suçluların kaçış güzergâhlarını tespit etmekle görevlidir.',
+        personnel: 0, vehicleCount: 10, vehicleType: 'AS350'
+    },
+    {
+        cat: 'cid', name: 'Criminal Investigation Division', code: 'CID',
+        icon: '🔍', img: '🛡️',
+        desc: 'Ciddi suçları araştırmak delil toplamak tanık ve şüphelileri sorgulamak olay yerlerini incelemek ve suçluları adalete teslim etmekle görevlidir.',
+        personnel: 1, vehicleCount: 15, vehicleType: '2023 CHEVROLET TAHOE + FORD CROWN VICTORIA'
+    },
+    {
+        cat: 'ert', name: 'Emergency Response Team', code: 'ERT',
+        icon: '🚨', img: '🔫',
+        desc: 'Özel olarak seçilmiş ve ileri düzeyde eğitilmiş taktik birimidir. Yüksek riskli olaylarda rehine durumları, otomatik silahlı çatışmalar, barikat kurma ve terör tehdidi gibi hızlı ve etkili müdahale etmekle görevlidir.',
+        personnel: 0, vehicleCount: 15, vehicleType: 'FORD F-250 SUPER DUTY'
+    },
+    {
+        cat: 'hsu', name: 'High Speed Unit', code: 'HSU',
+        icon: '🏎️', img: '🐎',
+        desc: 'Yüksek hızda seyreden araçları durdurmak kaçan şüphelileri etkisiz hale getirmek tehlikeli sürücüleri takip etmek ve kara yollarında kamu güvenliğini sağlamakla görevlidir.',
+        personnel: 0, vehicleCount: 15, vehicleType: 'FORD MUSTANG · DODGE CHALLENGER'
+    },
+    {
+        cat: 'iad', name: 'Internal Affairs Division', code: 'IAD',
+        icon: '⚖️', img: '⚖️',
+        desc: 'Internal Affairs Unit personelini kuvvetleriyle ilgili şikayetleri inceler yetki aşımı ve suistimal iddialarını araştırır disiplin süreçlerini yürütür ve personel davranışlarına ilişkin delil toplar.',
+        personnel: 0, vehicleCount: 5, vehicleType: 'BELGE'
+    },
+    {
+        cat: 'k9', name: 'K-9 Unit', code: 'K9',
+        icon: '🐕', img: '🐕',
+        desc: 'Özel eğitimli köpeklerin görevleri arasında uyuşturucu ve patlayıcı aramak, kayıp kişileri bulmak, olay yeri kanıtlarını bulmak, insanları korumak ve polis memurlarından kaçan veya polis memurlarına saldıran suçluları saldırarak yer alıyor.',
+        personnel: 0, vehicleCount: 3, vehicleType: 'K-9'
+    },
+    {
+        cat: 'motor', name: 'Motorcycle Unit', code: 'MOTOR',
+        icon: '🏍️', img: '🏍️',
+        desc: 'Motorların caddelerdeki manevra kabiliyetinin daha iyi olmasıyla, polis araçlarının giremediği yerlere gerek takibi devam ettirmeye yarayan birimdir.',
+        personnel: 0, vehicleCount: 15, vehicleType: 'BMW GS1200'
+    },
+    {
+        cat: 'narcotic', name: 'Narcotics Enforcement Unit', code: 'NEU',
+        icon: '🚭', img: '🌿',
+        desc: 'Uyuşturucu suçlarıyla mücadele eden özel bir birimdir. Uyuşturucu madde üretimi, ticareti ve kullanımıyla ilgili operasyonlar düzenler, ayrıca bu suçlarla bağlantılı şebekeleri ortaya çıkarmayı hedefler.',
+        personnel: 0, vehicleCount: 15, vehicleType: '2020 FORD EXPLORER'
+    },
+    {
+        cat: 'oss', name: 'Operation Safe Street', code: 'OSS',
+        icon: '🛡️', img: '🦅',
+        desc: 'Operation Safe Street, çetelerin suç faaliyetlerini araştıran, istihbarat toplayıp paylaşan ve sokak çetelerine yönelik operasyonlara katılan özel birimdir.',
+        personnel: 1, vehicleCount: 15, vehicleType: '2020 FORD EXPLORER'
+    },
+    {
+        cat: 'upr', name: 'Urban Police Rifle', code: 'UPR',
+        icon: '👮', img: '🔫',
+        desc: 'Şehir içi yüksek riskli olaylarda devriye memurlarına destek olan, uzun namlulu silah kullanma yetkisine sahip özel birim.',
+        personnel: 0, vehicleCount: 8, vehicleType: 'FORD INTERCEPTOR'
+    },
+];
+
+let currentCat = 'all';
+let collapsedUnits = new Set();
+
+function renderUnits() {
+    const filtered = currentCat === 'all' ? UNITS : UNITS.filter(u => u.cat === currentCat);
+    const container = document.getElementById('unitsList');
+    
+    if (!filtered.length) {
+        container.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div>Bu kategoride birim yok</div></div>';
+        return;
+    }
+    
+    container.innerHTML = filtered.map(u => `
+        <div class="unit-card ${collapsedUnits.has(u.code) ? 'collapsed' : ''}" data-code="${u.code}">
+            <div class="unit-head" onclick="toggleUnit('${u.code}')">
+                <div class="unit-icon">${u.icon}</div>
+                <div class="unit-info">
+                    <div class="unit-name">${u.name}</div>
+                    <div class="unit-cat">${u.code} BİRİMİ</div>
+                </div>
+                <div class="unit-toggle">▼</div>
+            </div>
+            <div class="unit-body">
+                <div class="unit-content">
+                    <div class="unit-desc">${u.desc}</div>
+                    <div class="unit-stats">
+                        <div class="unit-stat">
+                            <div class="unit-stat-icon">👥</div>
+                            <div>
+                                <div class="unit-stat-value">${u.personnel}</div>
+                                <div class="unit-stat-label">PERSONEL</div>
+                            </div>
+                        </div>
+                        <div class="unit-stat">
+                            <div class="unit-stat-icon">🚗</div>
+                            <div>
+                                <div class="unit-stat-value">${u.vehicleCount}</div>
+                                <div class="unit-stat-label">${u.vehicleType.substring(0, 32)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="unit-image">${u.img}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleUnit(code) {
+    if (collapsedUnits.has(code)) collapsedUnits.delete(code);
+    else collapsedUnits.add(code);
+    renderUnits();
+}
+
+document.querySelectorAll('.unit-tab').forEach(t => {
+    t.addEventListener('click', () => {
+        document.querySelectorAll('.unit-tab').forEach(b => b.classList.remove('active'));
+        t.classList.add('active');
+        currentCat = t.dataset.cat;
+        renderUnits();
+    });
+});
+
+renderUnits();
+</script>
+</body>
+</html>

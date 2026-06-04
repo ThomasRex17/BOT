@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vatandaş Veritabanı · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>👤 Vatandaş Veritabanı</h1>
+            <p>Los Santos eyalet vatandaşlarının sicil kayıtları</p>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-bottom: 18px;">
+            <input id="searchInput" placeholder="İsim veya kimlik no ara..." style="flex: 1; background: var(--bg-3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-size: 13px;" />
+            <button class="btn btn-primary" onclick="search()">🔍 Ara</button>
+            <button class="btn btn-primary" onclick="openNewCitizen()">+ Yeni Kayıt</button>
+        </div>
+        
+        <div class="table-card">
+            <table class="dt">
+                <thead>
+                    <tr>
+                        <th>Kimlik No</th>
+                        <th>İsim</th>
+                        <th>Doğum Tarihi</th>
+                        <th>Risk</th>
+                        <th>Aranıyor</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="citizensBody">
+                    <tr><td colspan="6"><div class="empty"><div class="empty-icon">👥</div>Arama yapmak için yukarıdaki kutuyu kullan</div></td></tr>
+                </tbody>
+            </table>
+            <div id="paginationContainer" class="pag"></div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.require(PERM.PAGE_CITIZENS)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('citizens');
+
+document.getElementById('searchInput').addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') search();
+});
+
+async function search(page = 1) {
+    const term = document.getElementById('searchInput').value.trim();
+    if (!term && page === 1) {
+        document.getElementById('citizensBody').innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div>Aramak için bir şey yaz</div></td></tr>`;
+        return;
+    }
+    
+    try {
+        const res = await api.get(`/citizens?search=${encodeURIComponent(term)}&page=${page}`);
+        const { items, pagination } = res.data;
+        
+        const tbody = document.getElementById('citizensBody');
+        if (!items.length) {
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty">Sonuç bulunamadı</div></td></tr>`;
+            return;
+        }
+        
+        tbody.innerHTML = items.map(c => `
+            <tr>
+                <td><code style="font-size: 11px;">${escapeHtml(c.civ_id)}</code></td>
+                <td><strong style="color: #fff;">${escapeHtml(c.name)}</strong></td>
+                <td>${c.date_of_birth || '—'}</td>
+                <td>
+                    <span class="pill ${c.risk_level === 'high' ? 'pill-danger' : c.risk_level === 'medium' ? 'pill-warning' : 'pill-muted'}">
+                        ${c.risk_level === 'high' ? 'Yüksek' : c.risk_level === 'medium' ? 'Orta' : 'Düşük'}
+                    </span>
+                </td>
+                <td>${c.is_wanted ? '<span style="color: #ef4444; font-weight: 700;">✓ Aranıyor</span>' : '—'}</td>
+                <td>
+                    <button class="btn btn-ghost btn-xs" onclick="viewCitizen(${c.id})">Profil</button>
+                </td>
+            </tr>
+        `).join('');
+        
+        renderPagination(pagination);
+    } catch (err) {
+        document.getElementById('citizensBody').innerHTML = `<tr><td colspan="6"><div class="empty">${err.message}</div></td></tr>`;
+    }
+}
+
+function renderPagination(pag) {
+    const c = document.getElementById('paginationContainer');
+    if (pag.pages <= 1) { c.innerHTML = ''; return; }
+    
+    let html = `<button class="pag-btn" ${pag.page <= 1 ? 'disabled' : ''} onclick="search(${pag.page - 1})">← Önceki</button>`;
+    for (let i = 1; i <= Math.min(pag.pages, 10); i++) {
+        html += `<button class="pag-btn ${i === pag.page ? 'active' : ''}" onclick="search(${i})">${i}</button>`;
+    }
+    html += `<button class="pag-btn" ${pag.page >= pag.pages ? 'disabled' : ''} onclick="search(${pag.page + 1})">Sonraki →</button>`;
+    c.innerHTML = html;
+}
+
+async function openNewCitizen() {
+    showModal({
+        title: 'Yeni Vatandaş Kaydı',
+        body: `
+            <form id="citizenForm">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Kimlik No *</label>
+                        <input name="civ_id" required maxlength="16" placeholder="örn: 123456" />
+                    </div>
+                    <div class="form-group">
+                        <label>İsim Soyisim *</label>
+                        <input name="name" required maxlength="64" />
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Doğum Tarihi</label>
+                        <input name="date_of_birth" type="date" />
+                    </div>
+                    <div class="form-group">
+                        <label>Cinsiyet</label>
+                        <select name="gender">
+                            <option value="">— Seç —</option>
+                            <option value="male">Erkek</option>
+                            <option value="female">Kadın</option>
+                            <option value="other">Diğer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Telefon</label>
+                        <input name="phone" maxlength="32" />
+                    </div>
+                    <div class="form-group">
+                        <label>Risk Seviyesi</label>
+                        <select name="risk_level">
+                            <option value="low">Düşük</option>
+                            <option value="medium">Orta</option>
+                            <option value="high">Yüksek</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Adres</label>
+                    <input name="address" maxlength="200" />
+                </div>
+                <div class="form-group">
+                    <label>Notlar</label>
+                    <textarea name="notes" maxlength="500"></textarea>
+                </div>
+            </form>
+        `,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: 'Kaydet', class: 'btn-primary', onClick: saveCitizen },
+        ],
+    });
+}
+
+async function saveCitizen() {
+    const fd = new FormData(document.getElementById('citizenForm'));
+    const data = {
+        civ_id: fd.get('civ_id'),
+        name: fd.get('name'),
+        date_of_birth: fd.get('date_of_birth') || null,
+        gender: fd.get('gender') || null,
+        phone: fd.get('phone') || null,
+        address: fd.get('address') || null,
+        notes: fd.get('notes') || null,
+        risk_level: fd.get('risk_level'),
+    };
+    if (!data.civ_id || !data.name) { showError('Kimlik no ve isim gerekli'); return; }
+    
+    try {
+        await api.post('/citizens', data);
+        showSuccess('Vatandaş kaydedildi');
+        closeModal();
+        search();
+    } catch (err) { showError(err.message); }
+}
+
+async function viewCitizen(id) {
+    try {
+        const res = await api.get('/citizens/' + id);
+        const c = res.data;
+        
+        showModal({
+            title: escapeHtml(c.name),
+            subtitle: `Kimlik: ${c.civ_id}`,
+            size: 'lg',
+            body: `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;">
+                    <div style="background: var(--bg-3); padding: 14px; border-radius: 10px;">
+                        <div style="font-size: 11px; color: var(--text-mute); margin-bottom: 4px;">Doğum Tarihi</div>
+                        <div style="color: #fff;">${c.date_of_birth || '—'}</div>
+                    </div>
+                    <div style="background: var(--bg-3); padding: 14px; border-radius: 10px;">
+                        <div style="font-size: 11px; color: var(--text-mute); margin-bottom: 4px;">Telefon</div>
+                        <div style="color: #fff;">${escapeHtml(c.phone || '—')}</div>
+                    </div>
+                </div>
+                
+                ${c.address ? `
+                    <div style="background: var(--bg-3); padding: 14px; border-radius: 10px; margin-bottom: 14px;">
+                        <div style="font-size: 11px; color: var(--text-mute); margin-bottom: 4px;">Adres</div>
+                        <div style="color: #fff;">${escapeHtml(c.address)}</div>
+                    </div>
+                ` : ''}
+                
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #fff;">Sicil Kayıtları (${c.records.length})</h4>
+                ${c.records.length === 0 
+                    ? '<div style="text-align: center; padding: 20px; color: var(--text-mute);">Temiz sicil</div>'
+                    : c.records.map(r => `
+                        <div style="background: var(--bg-3); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 8px; margin-bottom: 8px;">
+                            <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">${escapeHtml(r.title)}</div>
+                            <div style="font-size: 12px; color: var(--text-mute);">${formatDateTime(r.created_at)} · ${escapeHtml(r.officer_name || 'Bilinmeyen memur')}</div>
+                        </div>
+                    `).join('')
+                }
+            `,
+            buttons: [
+                { id: 'close', label: 'Kapat', class: 'btn-ghost', onClick: closeModal },
+            ],
+        });
+    } catch (err) { showError(err.message); }
+}
+</script>
+</body>
+</html>

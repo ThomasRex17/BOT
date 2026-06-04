@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ayarlar · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+/* ─── Sol menü ─────────────────────────────────────────────── */
+.settings-side {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    height: fit-content;
+    position: sticky;
+    top: 80px;
+}
+.settings-group-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-mute);
+    padding: 14px 12px 6px;
+    font-weight: 700;
+}
+.settings-group-title:first-child { padding-top: 4px; }
+
+.settings-tab-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-dim);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    transition: all var(--dur-base, 240ms) var(--ease-out, cubic-bezier(0.16,1,0.3,1));
+    position: relative;
+}
+.settings-tab-link:hover {
+    background: rgba(255,255,255,0.04);
+    color: #fff;
+}
+.settings-tab-link.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: #fff;
+    box-shadow: 0 2px 12px var(--primary-glow);
+}
+/* Aktif sekmenin sol kenarındaki ince çubuk */
+.settings-tab-link.active::before {
+    content: '';
+    position: absolute;
+    left: -14px; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 22px;
+    background: var(--primary);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 8px var(--primary);
+}
+.settings-tab-link .tab-icon { width: 16px; text-align: center; font-size: 13px; }
+
+/* ─── Panel cilası ─────────────────────────────────────────── */
+.settings-panel {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    animation: panel-fade-in var(--dur-base, 240ms) var(--ease-out) both;
+}
+@keyframes panel-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.settings-panel h3 {
+    color: #fff;
+    font-size: 16px;
+    margin: 0 0 4px;
+    display: flex; align-items: center; gap: 8px;
+}
+.settings-panel > p.subtitle {
+    color: var(--text-mute);
+    font-size: 13px;
+    margin: 0 0 20px;
+}
+
+/* Form group polish */
+.form-group input,
+.form-group textarea,
+.form-group select {
+    transition: border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
+}
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-soft, rgba(99,102,241,0.18));
+}
+
+/* ─── Score reason items — daha cilalı liste ──────────────── */
+.score-reason-item {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color var(--dur-base) var(--ease-out),
+                background var(--dur-base) var(--ease-out);
+    animation: p1-fade-up 0.3s var(--ease-out) both;
+}
+.score-reason-item:hover {
+    border-color: var(--border-strong);
+    background: rgba(255,255,255,0.02);
+}
+.score-reason-item .points-pill {
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 56px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+.score-reason-item .points-pill.positive {
+    background: rgba(34,197,94,0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34,197,94,0.3);
+}
+.score-reason-item .points-pill.negative {
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.3);
+}
+.score-reason-item .description {
+    flex: 1;
+    color: #fff;
+    font-size: 13px;
+}
+.score-reason-item .actions {
+    display: flex; gap: 6px;
+}
+.score-reason-item .icon-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-mute);
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+    display: grid; place-items: center;
+    font-size: 13px;
+}
+.score-reason-item .icon-btn:hover {
+    color: #fff;
+    border-color: var(--border-strong);
+    background: rgba(255,255,255,0.04);
+}
+.score-reason-item .icon-btn.danger:hover {
+    color: #fca5a5;
+    border-color: rgba(239,68,68,0.5);
+    background: rgba(239,68,68,0.08);
+}
+
+/* ─── Tema kartları ────────────────────────────────────────── */
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+}
+.theme-card {
+    background: var(--bg-3);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+    text-align: center;
+    position: relative;
+}
+.theme-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+}
+.theme-card.selected {
+    border-color: var(--primary);
+    box-shadow: 0 4px 16px var(--primary-glow);
+}
+.theme-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 6px; right: 8px;
+    background: var(--primary);
+    color: #fff;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+}
+.theme-swatch {
+    height: 56px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: var(--swatch);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.theme-name {
+    font-size: 12px;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* ─── Section divider ──────────────────────────────────────── */
+.section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 22px 0;
+}
+
+/* ─── Toggle switch (Genel Ayarlar checkbox'lar) ──────────── */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row .info { flex: 1; }
+.toggle-row .info label {
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 2px;
+}
+.toggle-row .info .desc {
+    color: var(--text-mute);
+    font-size: 11px;
+}
+.toggle-switch {
+    position: relative;
+    width: 44px; height: 24px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+    flex-shrink: 0;
+}
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: var(--text-mute);
+    border-radius: 50%;
+    transition: all var(--dur-base) var(--ease-out);
+}
+.toggle-switch.on {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+.toggle-switch.on::after {
+    left: 22px;
+    background: #fff;
+}
+
+/* ─── Panel skeleton (yüklenirken) ─────────────────────────── */
+.settings-skeleton {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+}
+.settings-skeleton .skel-line {
+    height: 16px;
+    background: linear-gradient(90deg,
+        rgba(255,255,255,0.06) 0%,
+        rgba(255,255,255,0.14) 50%,
+        rgba(255,255,255,0.06) 100%);
+    background-size: 200% 100%;
+    animation: p1-shimmer 1.4s infinite linear;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>⚙️ Ayarlar <span style="display: inline-block; padding: 4px 12px; background: var(--primary-soft); color: var(--primary-light); border: 1px solid var(--border-strong); border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; vertical-align: middle; margin-left: 8px;">SİSTEM AYARLARI</span></h1>
+            <p>Site ve personel yönetim ayarları</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 18px;">
+            <nav class="settings-side">
+                <div class="settings-group-title">SİTE TASARIM</div>
+                <button class="settings-tab-link active" data-tab="general"><span class="tab-icon">⚙️</span><span>Genel Ayarlar</span></button>
+                <button class="settings-tab-link" data-tab="announcements"><span class="tab-icon">📢</span><span>Duyurular</span></button>
+                
+                <div class="settings-group-title">PERSONEL DÜZENLEME</div>
+                <button class="settings-tab-link" data-tab="personnel"><span class="tab-icon">👤</span><span>Personel Yönetimi</span></button>
+                <button class="settings-tab-link" data-tab="ranks"><span class="tab-icon">⭐</span><span>Rütbe Düzenleme</span></button>
+                <button class="settings-tab-link" data-tab="licenses"><span class="tab-icon">🪪</span><span>Lisans Yönetimi</span></button>
+                <button class="settings-tab-link" data-tab="badges"><span class="tab-icon">🎖️</span><span>Rozet &amp; Madalya</span></button>
+                <button class="settings-tab-link" data-tab="mailgroups"><span class="tab-icon">✉️</span><span>Posta Grupları</span></button>
+                
+                <div class="settings-group-title">BİRİM YÖNETİMİ</div>
+                <button class="settings-tab-link" data-tab="unitcats"><span class="tab-icon">📁</span><span>Birim Kategorileri</span></button>
+                <button class="settings-tab-link" data-tab="units"><span class="tab-icon">🏢</span><span>Birimler</span></button>
+                
+                <div class="settings-group-title">RAPOR YÖNETİMİ</div>
+                <button class="settings-tab-link" data-tab="reportTemplates"><span class="tab-icon">📄</span><span>Rapor Şablonları</span></button>
+                
+                <div class="settings-group-title">SİSTEM</div>
+                <button class="settings-tab-link" data-tab="log"><span class="tab-icon">📜</span><span>Log</span></button>
+                <button class="settings-tab-link" data-tab="scoreReasons"><span class="tab-icon">📊</span><span>Puan Sebepleri</span></button>
+                
+                <div class="settings-group-title">KATESHİ</div>
+                <button class="settings-tab-link" data-tab="kateshi"><span class="tab-icon">⚡</span><span>Kateshi Ayarları</span></button>
+            </nav>
+            
+            <div id="settingsContent">
+                <div class="settings-skeleton">
+                    <div class="skel-line" style="width: 30%; height: 22px;"></div>
+                    <div class="skel-line" style="width: 60%;"></div>
+                    <div style="height: 20px;"></div>
+                    <div class="skel-line" style="width: 80%;"></div>
+                    <div class="skel-line" style="width: 70%;"></div>
+                    <div class="skel-line" style="width: 50%;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.require(PERM.PAGE_SETTINGS)) { /* yönlendirildi */ }
+if (!Auth.isAdmin()) {
+    showError('Bu sayfa için admin yetkisi gerekli');
+    setTimeout(() => window.location.href = '/index.html', 1500);
+}
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('settings');
+
+let allSettings = {};
+
+async function loadSettings() {
+    try {
+        const res = await api.get('/system/settings');
+        allSettings = res.data || {};
+    } catch {}
+}
+
+// ─── Tab içerikleri ─────────────────────────────────────────
+const TABS = {
+    // ──── 1) GENEL AYARLAR ────────────────────────────────
+    general: () => {
+        const themes = [
+            { id: 'orange',  name: 'Turuncu',  swatch: 'linear-gradient(135deg, #f59e0b, #d97706)' },
+            { id: 'blue',    name: 'Mavi',     swatch: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' },
+            { id: 'purple',  name: 'Mor',      swatch: 'linear-gradient(135deg, #a855f7, #7c3aed)' },
+            { id: 'green',   name: 'Yeşil',    swatch: 'linear-gradient(135deg, #22c55e, #15803d)' },
+            { id: 'red',     name: 'Kırmızı',  swatch: 'linear-gradient(135deg, #ef4444, #b91c1c)' },
+            { id: 'cyan',    name: 'Camgöbeği', swatch: 'linear-gradient(135deg, #06b6d4, #0e7490)' },
+        ];
+        const currentTheme = allSettings['site.theme'] || 'orange';
+        const scoreOn = allSettings['rank.score_enabled'] === 'true';
+        const dutyAutoEnd = allSettings['duty.auto_end_enabled'] === 'true';
+        
+        return `
+            <div class="settings-panel">
+                <h3>⚙️ Genel Ayarlar</h3>
+                <p class="subtitle">Site adı, slogan, tema rengi ve sistem davranışı</p>
+                
+                <div class="form-group">
+                    <label>Departman Adı</label>
+                    <input id="setting_site_name" value="${escapeHtml(allSettings['site.name'] || '')}" />
+                </div>
+                <div class="form-group">
+                    <label>Slogan</label>
+                    <input id="setting_site_tagline" value="${escapeHtml(allSettings['site.tagline'] || '')}" />
+                </div>
+                
+                <div style="margin: 18px 0 6px;">
+                    <label style="font-size: 12px; color: var(--text); font-weight: 600;">Tema Rengi</label>
+                </div>
+                <div class="theme-grid" id="themeGrid">
+                    ${themes.map(t => `
+                        <div class="theme-card ${t.id === currentTheme ? 'selected' : ''}" data-theme="${t.id}" style="--swatch: ${t.swatch};">
+                            <div class="theme-swatch"></div>
+                            <div class="theme-name">${t.name}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="section-divider"></div>
+                
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Otomatik Yenileme (saniye)</label>
+                        <input id="setting_refresh" type="number" value="${allSettings['auto_refresh.seconds'] || '15'}" min="5" />
+                    </div>
+                    <div class="form-group">
+                        <label>Haftalık Mesai Hedefi (saat)</label>
+                        <input id="setting_target" type="number" value="${allSettings['duty.weekly_target'] || '10'}" />
+                    </div>
+                </div>
+                
+                <div class="section-divider"></div>
+                
+                <div class="toggle-row">
+                    <div class="info">
+                        <label>Rütbe puan sistemi</label>
+                        <div class="desc">Etkinleştirilince personel puan sebeplerine göre rütbe atlatma akışı çalışır.</div>
+                    </div>
+                    <div class="toggle-switch ${scoreOn ? 'on' : ''}" id="toggle_score" data-key="rank.score_enabled"></div>
+                </div>
+                <div class="toggle-row">
+                    <div class="info">
+                        <label>Otomatik mesai sonlandırma</label>
+                        <div class="desc">Belirli süre hareketsiz kalan personelin mesaisini otomatik kapatır.</div>
+                    </div>
+                    <div class="toggle-switch ${dutyAutoEnd ? 'on' : ''}" id="toggle_duty_auto" data-key="duty.auto_end_enabled"></div>
+                </div>
+                
+                <div style="margin-top: 22px;">
+                    <button class="btn btn-primary" onclick="saveGeneral()">💾 Değişiklikleri Kaydet</button>
+                </div>
+            </div>
+        `;
+    },
+    
+    // ──── 2) DUYURULAR ────────────────────────────────────
+    announcements: () => {
+        loadAnnouncementsInSettings();
+        return `
+            <div class="settings-panel">
+                <h3>📢 Duyurular</h3>
+                <p class="subtitle">Personele gösterilecek duyuruları buradan yönetin. Önemli duyurular dashboard'da ön plana çıkar.</p>
+                
+                <div class="form-group">
+                    <label>Başlık</label>
+                    <input id="newAnnTitle" placeholder="Örn: Cuma günü toplantı saatleri" />
+                </div>
+                <div class="form-group">
+                    <label>İçerik</label>
+                    <textarea id="newAnnContent" rows="3" placeholder="Duyuru içeriği..."></textarea>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Önem</label>
+                        <select id="newAnnPriority">
+                            <option value="normal">Normal</option>
+                            <option value="important">Önemli</option>
+                            <option value="urgent">Acil</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Bitiş tarihi (boş = süresiz)</label>
+                        <input id="newAnnExpiry" type="date" />
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="addAnnouncement()">+ Duyuru Ekle</button>
+                
+                <div class="section-divider"></div>
+                
+                <h4 style="color: #fff; margin: 0 0 12px; font-size: 14px;">Aktif Duyurular</h4>
+                <div id="announcementsList" style="color: var(--text-mute); font-size: 13px;">Yükleniyor...</div>
+            </div>
+        `;
+    },
+    
+    // ──── 3) PUAN SEBEPLERİ ───────────────────────────────
+    scoreReasons: () => {
+        loadScoreReasons();
+        const scoreEnabled = allSettings['rank.score_enabled'] === 'true';
+        return `
+            <div class="settings-panel">
+                <h3>📊 Puan Sebepleri</h3>
+                <p class="subtitle">Personel puan işlemlerinde seçilecek sebepleri burada tanımlayın. Her sebep sabit bir puan değişimi (+ veya −) uygular.</p>
+                
+                ${!scoreEnabled ? `
+                    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); padding: 14px 18px; border-radius: 10px; margin-bottom: 18px; color: #fbbf24; font-size: 13px; display: flex; gap: 12px; align-items: center;">
+                        <span style="font-size: 20px;">⚠️</span>
+                        <div>
+                            <strong>Puan sistemi şu an kapalı.</strong> Sebepleri yine de düzenleyebilirsiniz; personelde kullanım için
+                            <a href="#general" style="color: #fbbf24; font-weight: 700; text-decoration: underline;">Genel Ayarlar</a>'dan
+                            "Rütbe puan sistemini etkinleştir" seçeneğini açın.
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <h4 style="color: #fff; margin: 0 0 10px; font-size: 14px;">Yeni sebep</h4>
+                <div style="background: var(--bg-3); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+                    <div class="form-group">
+                        <label>Sebep açıklaması</label>
+                        <input id="newReasonDesc" placeholder="Örn: Başarılı operasyon" />
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Puan (+ veya −)</label>
+                            <input id="newReasonPoints" type="number" placeholder="10 veya -5" />
+                        </div>
+                        <div class="form-group">
+                            <label>Sıra (isteğe bağlı)</label>
+                            <input id="newReasonOrder" type="number" placeholder="Listede sıralama" />
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addScoreReason()">+ Sebep Ekle</button>
+                </div>
+                
+                <div class="section-divider"></div>
+                
+                <h4 style="color: #fff; margin: 0 0 12px; font-size: 14px;">Tanımlı sebepler</h4>
+                <div id="scoreReasonsList" style="color: var(--text-mute); font-size: 13px;">Yükleniyor...</div>
+            </div>
+        `;
+    },
+    
+    // ──── 4) POSTA GRUPLARI ───────────────────────────────
+    mailgroups: () => {
+        loadMailGroups();
+        return `
+            <div class="settings-panel">
+                <h3>✉️ Posta Grupları</h3>
+                <p class="subtitle">Toplu mail göndermek için kullanılacak posta gruplarını tanımlayın. Rütbe veya birim filtresi verebilirsiniz.</p>
+                
+                <div style="background: var(--bg-3); padding: 16px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 18px;">
+                    <div class="form-group">
+                        <label>Grup Adı</label>
+                        <input id="newGroupName" placeholder="Örn: Tüm Memurlar" />
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Rütbe Filtresi (opsiyonel)</label>
+                            <input id="newGroupRank" placeholder="örn: Officer 1" />
+                        </div>
+                        <div class="form-group">
+                            <label>Birim Filtresi (opsiyonel)</label>
+                            <input id="newGroupUnit" placeholder="örn: ASD" />
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addMailGroup()">+ Grup Oluştur</button>
+                </div>
+                
+                <div id="mailGroupsList">Yükleniyor...</div>
+            </div>
+        `;
+    },
+    
+    // ──── 5) DİĞER SEKMELER (link cards) ──────────────────
+    log: () => `
+        <div class="settings-panel" style="text-align: center; padding: 48px 32px;">
+            <div style="font-size: 56px; margin-bottom: 14px;">📜</div>
+            <h3 style="justify-content: center;">Aktivite Logu</h3>
+            <p class="subtitle">Sistemde yapılan tüm işlemlerin kaydı. Filtre, tarih aralığı ve CSV export ile.</p>
+            <a href="/activity.html" class="btn btn-primary" style="text-decoration: none; margin-top: 8px;">📋 Logu Aç</a>
+        </div>
+    `,
+    
+    kateshi: () => `
+        <div class="settings-panel" style="text-align: center; padding: 48px 32px;">
+            <div style="font-size: 56px; margin-bottom: 14px;">⚡</div>
+            <h3 style="justify-content: center;">Kateshi Ayarları</h3>
+            <p class="subtitle">Lisans, branding ve premium özellikler.</p>
+            <p style="color: var(--text-mute); font-size: 12px; margin-top: 12px;">Bu özellikler yakında.</p>
+        </div>
+    `,
+    
+    personnel: () => linkPanel('👤', 'Personel Yönetimi', 'Personel listesi, atama, düzenleme ve detay.', '/personnel.html', 'Personel Sayfasını Aç'),
+    ranks:     () => linkPanel('⭐', 'Rütbe Düzenleme', 'Rütbe ekleme, düzenleme, sıralama ve Discord rol bağlama.', '/ranks.html', 'Rütbeler Sayfasını Aç'),
+    licenses:  () => linkPanel('🪪', 'Lisans Yönetimi', 'Operasyonel lisansları (Bean Bag, Operation Safe Street vs.) tanımlayın.', '/licenses.html', 'Lisanslar Sayfasını Aç'),
+    badges:    () => linkPanel('🎖️', 'Rozet & Madalya', 'Personele verilecek rozet ve madalyaları yönetin.', '/badges.html', 'Rozet Sayfasını Aç'),
+    units:     () => linkPanel('🏢', 'Birimler', 'Departman birimlerini ve üyelerini yönetin.', '/units.html', 'Birimler Sayfasını Aç'),
+    
+    unitcats: () => `
+        <div class="settings-panel" style="text-align: center; padding: 48px 32px;">
+            <div style="font-size: 56px; margin-bottom: 14px;">📁</div>
+            <h3 style="justify-content: center;">Birim Kategorileri</h3>
+            <p class="subtitle">Yakında — birimleri kategorilere ayırarak organize edebileceksiniz.</p>
+        </div>
+    `,
+    reportTemplates: () => `
+        <div class="settings-panel" style="text-align: center; padding: 48px 32px;">
+            <div style="font-size: 56px; margin-bottom: 14px;">📄</div>
+            <h3 style="justify-content: center;">Rapor Şablonları</h3>
+            <p class="subtitle">Yakında — özelleştirilebilir rapor şablonları.</p>
+        </div>
+    `,
+};
+
+function linkPanel(icon, title, desc, href, btn) {
+    return `
+        <div class="settings-panel" style="text-align: center; padding: 48px 32px;">
+            <div style="font-size: 56px; margin-bottom: 14px;">${icon}</div>
+            <h3 style="justify-content: center;">${title}</h3>
+            <p class="subtitle">${desc}</p>
+            <a href="${href}" class="btn btn-primary" style="text-decoration: none; margin-top: 8px;">${btn} →</a>
+        </div>
+    `;
+}
+
+// ─── Genel Ayarları Kaydet ─────────────────────────────────
+async function saveGeneral() {
+    // Tema seçimi
+    const selectedTheme = document.querySelector('.theme-card.selected')?.dataset.theme || 'orange';
+    // Toggle değerleri
+    const scoreOn = document.getElementById('toggle_score').classList.contains('on');
+    const dutyOn = document.getElementById('toggle_duty_auto').classList.contains('on');
+    
+    const data = {
+        'site.name': document.getElementById('setting_site_name').value,
+        'site.tagline': document.getElementById('setting_site_tagline').value,
+        'site.theme': selectedTheme,
+        'auto_refresh.seconds': document.getElementById('setting_refresh').value,
+        'duty.weekly_target': document.getElementById('setting_target').value,
+        'rank.score_enabled': scoreOn ? 'true' : 'false',
+        'duty.auto_end_enabled': dutyOn ? 'true' : 'false',
+    };
+    try {
+        await api.put('/system/settings', data);
+        allSettings = { ...allSettings, ...data };
+        showSuccess('Ayarlar kaydedildi');
+    } catch (err) { showError(err.message); }
+}
+
+// Tema kart seçimi delegated
+document.addEventListener('click', (e) => {
+    const card = e.target.closest('.theme-card');
+    if (card) {
+        document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+    }
+    // Toggle switch delegated
+    const ts = e.target.closest('.toggle-switch');
+    if (ts) ts.classList.toggle('on');
+});
+
+// ─── PUAN SEBEPLERİ ────────────────────────────────────────
+async function loadScoreReasons() {
+    try {
+        const res = await api.get('/system/score-reasons');
+        const reasons = res.data || [];
+        const c = document.getElementById('scoreReasonsList');
+        if (!c) return;
+        if (!reasons.length) {
+            c.innerHTML = `
+                <div style="background: var(--bg-3); border: 1px dashed var(--border); padding: 30px; text-align: center; border-radius: 10px; color: var(--text-mute);">
+                    <div style="font-size: 32px; margin-bottom: 8px;">📭</div>
+                    Henüz tanımlı sebep yok.
+                </div>
+            `;
+        } else {
+            c.innerHTML = reasons.map((r, i) => `
+                <div class="score-reason-item" style="animation-delay: ${i * 30}ms;">
+                    <span class="points-pill ${r.points >= 0 ? 'positive' : 'negative'}">${r.points >= 0 ? '+' : ''}${r.points}</span>
+                    <span class="description">${escapeHtml(r.description)}</span>
+                    <div class="actions">
+                        <button class="icon-btn" onclick="editScoreReason(${r.id}, ${r.points}, '${escapeHtml((r.description||'').replace(/'/g, "\\'"))}')" title="Düzenle">✎</button>
+                        <button class="icon-btn danger" onclick="deleteScoreReason(${r.id})" title="Sil">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (err) { console.error(err); }
+}
+
+async function addScoreReason() {
+    const desc = document.getElementById('newReasonDesc').value.trim();
+    const points = document.getElementById('newReasonPoints').value;
+    const order = document.getElementById('newReasonOrder').value;
+    if (!desc || !points) { showError('Açıklama ve puan zorunlu'); return; }
+    try {
+        await api.post('/system/score-reasons', {
+            description: desc,
+            points: parseInt(points),
+            sort_order: parseInt(order) || 0,
+        });
+        showSuccess('Sebep eklendi');
+        document.getElementById('newReasonDesc').value = '';
+        document.getElementById('newReasonPoints').value = '';
+        document.getElementById('newReasonOrder').value = '';
+        loadScoreReasons();
+    } catch (err) { showError(err.message); }
+}
+
+function editScoreReason(id, currentPoints, currentDesc) {
+    showModal({
+        title: '✎ Sebebi Düzenle',
+        body: `
+            <div class="form-group">
+                <label>Açıklama</label>
+                <input id="editReasonDesc" value="${escapeHtml(currentDesc)}" />
+            </div>
+            <div class="form-group">
+                <label>Puan</label>
+                <input id="editReasonPoints" type="number" value="${currentPoints}" />
+            </div>
+        `,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: 'Kaydet', class: 'btn-primary', onClick: async () => {
+                const newDesc = document.getElementById('editReasonDesc').value.trim();
+                const newPts = document.getElementById('editReasonPoints').value;
+                if (!newDesc || !newPts) { showError('Boş bırakılamaz'); return; }
+                try {
+                    await api.put(`/system/score-reasons/${id}`, {
+                        description: newDesc,
+                        points: parseInt(newPts),
+                    });
+                    closeModal();
+                    showSuccess('Güncellendi');
+                    loadScoreReasons();
+                } catch (err) { showError(err.message); }
+            }},
+        ],
+    });
+}
+
+async function deleteScoreReason(id) {
+    showConfirm('Bu sebebi silmek istediğine emin misin?', async () => {
+        try {
+            await api.delete(`/system/score-reasons/${id}`);
+            showSuccess('Silindi');
+            loadScoreReasons();
+        } catch (err) { showError(err.message); }
+    });
+}
+
+// ─── POSTA GRUPLARI ────────────────────────────────────────
+async function loadMailGroups() {
+    try {
+        const res = await api.get('/system/mail-groups');
+        const groups = res.data || [];
+        const c = document.getElementById('mailGroupsList');
+        if (!c) return;
+        if (!groups.length) {
+            c.innerHTML = `
+                <div style="background: var(--bg-3); border: 1px dashed var(--border); padding: 30px; text-align: center; border-radius: 10px; color: var(--text-mute);">
+                    <div style="font-size: 32px; margin-bottom: 8px;">📭</div>
+                    Henüz posta grubu yok.
+                </div>
+            `;
+        } else {
+            c.innerHTML = groups.map((g, i) => `
+                <div class="score-reason-item" style="animation-delay: ${i * 30}ms;">
+                    <div style="width: 36px; height: 36px; background: var(--primary-soft); border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;">✉️</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; color: #fff; font-size: 13px;">${escapeHtml(g.name)}</div>
+                        <div style="font-size: 11px; color: var(--text-mute); margin-top: 2px;">
+                            ${g.rank_filter ? `Rütbe: ${escapeHtml(g.rank_filter)}` : ''}
+                            ${g.unit_filter ? ` · Birim: ${escapeHtml(g.unit_filter)}` : ''}
+                            ${!g.rank_filter && !g.unit_filter ? '<em>Tüm personel</em>' : ''}
+                        </div>
+                    </div>
+                    <button class="icon-btn danger" onclick="deleteMailGroup(${g.id})" title="Sil">✕</button>
+                </div>
+            `).join('');
+        }
+    } catch (err) { console.error(err); }
+}
+
+async function addMailGroup() {
+    const name = document.getElementById('newGroupName').value.trim();
+    const rank_filter = document.getElementById('newGroupRank').value.trim();
+    const unit_filter = document.getElementById('newGroupUnit').value.trim();
+    if (!name) { showError('Grup adı gerekli'); return; }
+    try {
+        await api.post('/system/mail-groups', { name, rank_filter: rank_filter || null, unit_filter: unit_filter || null });
+        showSuccess('Grup oluşturuldu');
+        document.getElementById('newGroupName').value = '';
+        document.getElementById('newGroupRank').value = '';
+        document.getElementById('newGroupUnit').value = '';
+        loadMailGroups();
+    } catch (err) { showError(err.message); }
+}
+
+async function deleteMailGroup(id) {
+    showConfirm('Bu grubu silmek istediğine emin misin?', async () => {
+        try {
+            await api.delete(`/system/mail-groups/${id}`);
+            showSuccess('Silindi');
+            loadMailGroups();
+        } catch (err) { showError(err.message); }
+    });
+}
+
+// ─── DUYURULAR (settings içinde mini CRUD) ─────────────────
+async function loadAnnouncementsInSettings() {
+    try {
+        const res = await api.get('/announcements');
+        const list = res.data || [];
+        const c = document.getElementById('announcementsList');
+        if (!c) return;
+        if (!list.length) {
+            c.innerHTML = `
+                <div style="background: var(--bg-3); border: 1px dashed var(--border); padding: 30px; text-align: center; border-radius: 10px; color: var(--text-mute);">
+                    <div style="font-size: 32px; margin-bottom: 8px;">📭</div>
+                    Henüz duyuru yok.
+                </div>
+            `;
+        } else {
+            const priorityIcon = { normal: '📌', important: '⚠️', urgent: '🚨' };
+            const priorityColor = { normal: 'rgba(255,255,255,0.08)', important: 'rgba(245,158,11,0.18)', urgent: 'rgba(239,68,68,0.18)' };
+            c.innerHTML = list.map((a, i) => `
+                <div class="score-reason-item" style="animation-delay: ${i * 30}ms; align-items: flex-start;">
+                    <div style="width: 36px; height: 36px; background: ${priorityColor[a.priority || 'normal']}; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;">${priorityIcon[a.priority || 'normal']}</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 700; color: #fff; font-size: 13px;">${escapeHtml(a.title)}</div>
+                        <div style="font-size: 12px; color: var(--text-mute); margin-top: 4px; line-height: 1.4;">${escapeHtml(a.content || '').slice(0, 200)}${(a.content || '').length > 200 ? '…' : ''}</div>
+                        <div style="font-size: 10px; color: var(--text-mute); margin-top: 6px;">
+                            ${formatDate ? formatDate(a.created_at) : a.created_at}
+                            ${a.expires_at ? ` · Bitiş: ${a.expires_at.slice(0,10)}` : ''}
+                        </div>
+                    </div>
+                    <button class="icon-btn danger" onclick="deleteAnnouncement(${a.id})" title="Sil">✕</button>
+                </div>
+            `).join('');
+        }
+    } catch (err) { console.error(err); }
+}
+
+async function addAnnouncement() {
+    const title = document.getElementById('newAnnTitle').value.trim();
+    const content = document.getElementById('newAnnContent').value.trim();
+    const priority = document.getElementById('newAnnPriority').value;
+    const expires_at = document.getElementById('newAnnExpiry').value;
+    if (!title || !content) { showError('Başlık ve içerik gerekli'); return; }
+    try {
+        await api.post('/announcements', {
+            title, content, priority,
+            expires_at: expires_at || null,
+        });
+        showSuccess('Duyuru eklendi');
+        document.getElementById('newAnnTitle').value = '';
+        document.getElementById('newAnnContent').value = '';
+        document.getElementById('newAnnExpiry').value = '';
+        document.getElementById('newAnnPriority').value = 'normal';
+        loadAnnouncementsInSettings();
+    } catch (err) { showError(err.message); }
+}
+
+async function deleteAnnouncement(id) {
+    showConfirm('Bu duyuruyu silmek istediğine emin misin?', async () => {
+        try {
+            await api.delete(`/announcements/${id}`);
+            showSuccess('Silindi');
+            loadAnnouncementsInSettings();
+        } catch (err) { showError(err.message); }
+    });
+}
+
+// ─── Tab routing (URL hash desteği) ────────────────────────
+// Kullanıcı /settings.html#scoreReasons gibi direkt linkleyebilir.
+function loadTab(name, updateHash = true) {
+    if (!TABS[name]) name = 'general';
+    document.querySelectorAll('.settings-tab-link').forEach(t => t.classList.remove('active'));
+    const btn = document.querySelector(`.settings-tab-link[data-tab="${name}"]`);
+    if (btn) btn.classList.add('active');
+    document.getElementById('settingsContent').innerHTML = TABS[name]();
+    if (updateHash && window.location.hash.replace('#','') !== name) {
+        history.replaceState(null, '', '#' + name);
+    }
+}
+
+document.querySelectorAll('.settings-tab-link').forEach(t => {
+    t.addEventListener('click', () => loadTab(t.dataset.tab));
+});
+
+// Hash değişimini takip et (geri/ileri butonları için)
+window.addEventListener('hashchange', () => {
+    const tab = window.location.hash.replace('#','') || 'general';
+    loadTab(tab, false);
+});
+
+(async () => {
+    await loadSettings();
+    const initialTab = window.location.hash.replace('#','') || 'general';
+    loadTab(initialTab, false);
+})();
+</script>
+</body>
+</html>

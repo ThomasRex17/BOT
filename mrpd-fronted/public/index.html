@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-v2">
+    <div class="dash-welcome">
+        <h1 id="welcomeTitle">Yükleniyor... <span class="role-badge-v2 p2-loading" id="roleBadge">—</span></h1>
+        <p id="welcomeSubtitle">Mission Row PD Yönetim Paneli</p>
+    </div>
+    
+    <!-- 4 stat kart -->
+    <div class="dash-stats-v2">
+        <div class="dash-stat-v2">
+            <div class="dash-stat-icon-v2 dsi-green">👥</div>
+            <div class="dash-stat-content-v2">
+                <div class="label">Aktif Personel</div>
+                <div class="value p2-loading" id="statPersonnel">—</div>
+            </div>
+        </div>
+        <div class="dash-stat-v2">
+            <div class="dash-stat-icon-v2 dsi-blue">⏱️</div>
+            <div class="dash-stat-content-v2">
+                <div class="label">Mesaide</div>
+                <div class="value p2-loading" id="statDuty">—</div>
+            </div>
+        </div>
+        <div class="dash-stat-v2">
+            <div class="dash-stat-icon-v2 dsi-orange">📋</div>
+            <div class="dash-stat-content-v2">
+                <div class="label">Bekleyen Başvuru</div>
+                <div class="value p2-loading" id="statApps">—</div>
+            </div>
+        </div>
+        <div class="dash-stat-v2">
+            <div class="dash-stat-icon-v2 dsi-purple">📈</div>
+            <div class="dash-stat-content-v2">
+                <div class="label">Geçen aya kıyasla mesai farkı</div>
+                <div class="value p2-loading" id="statDelta">—</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Arama kutusu -->
+    <div class="dash-search-v2">
+        <div class="dash-search-label">🔍 Ara</div>
+        <input type="text" class="dash-search-input-v2" id="dashSearch" placeholder="Personel, vatandaş, el kitabı..." />
+    </div>
+    
+    <!-- Modüller — data-perm ile permission filtrelenir -->
+    <div class="dash-modules-v2" id="moduleGrid">
+        <a href="/duty.html" class="dash-module-v2" data-perm="page.duty">
+            <div class="dash-module-icon-v2 dmi-green">⏱️</div>
+            <div class="dash-module-content">
+                <div class="title">Mesai Yönetimi</div>
+                <div class="desc">Personel mesai giriş/çıkışlarını takip edin, mesai saatlerini görüntüleyin ve raporlayın.</div>
+            </div>
+        </a>
+
+        <a href="/report-templates.html" class="dash-module-v2" data-perm="page.reports">
+            <div class="dash-module-icon-v2 dmi-blue">📄</div>
+            <div class="dash-module-content">
+                <div class="title">Rapor Yönetimi</div>
+                <div class="desc">Olay raporları oluşturun, düzenleyin ve arşivleyin. Tüm raporlara kolayca erişin.</div>
+            </div>
+        </a>
+
+        <a href="/personnel.html" class="dash-module-v2" data-perm="page.personnel">
+            <div class="dash-module-icon-v2 dmi-orange">👮</div>
+            <div class="dash-module-content">
+                <div class="title">Personel Yönetimi</div>
+                <div class="desc">Personel listesi, rütbe değişiklikleri, izinler ve performans takibi.</div>
+            </div>
+        </a>
+
+        <a href="/fto.html" class="dash-module-v2" data-perm="page.fto">
+            <div class="dash-module-icon-v2 dmi-teal">📚</div>
+            <div class="dash-module-content">
+                <div class="title">FTO & FTS</div>
+                <div class="desc">Field Training Officer ve Field Training Student atamaları, değerlendirme raporları.</div>
+            </div>
+        </a>
+
+        <a href="/citizens.html" class="dash-module-v2" data-perm="page.citizens">
+            <div class="dash-module-icon-v2 dmi-purple">👤</div>
+            <div class="dash-module-content">
+                <div class="title">Vatandaş Veritabanı</div>
+                <div class="desc">Eyalet vatandaşlarının sicil kayıtlarını inceleyin veya oluşturun.</div>
+            </div>
+        </a>
+
+        <a href="/stats.html" class="dash-module-v2" data-perm="page.stats">
+            <div class="dash-module-icon-v2 dmi-red">📊</div>
+            <div class="dash-module-content">
+                <div class="title">İstatistikler & Analiz</div>
+                <div class="desc">Performans metrikleri, grafikler ve trend analizleri.</div>
+            </div>
+        </a>
+
+        <a href="/applications.html" class="dash-module-v2" data-perm="page.applications">
+            <div class="dash-module-icon-v2 dmi-pink">✓</div>
+            <div class="dash-module-content">
+                <div class="title">Başvuru Yönetimi</div>
+                <div class="desc">Personel başvurularını inceleyip onaylayın veya reddet.</div>
+            </div>
+        </a>
+
+        <a href="/forms.html" class="dash-module-v2" data-perm="page.forms">
+            <div class="dash-module-icon-v2 dmi-pink">📋</div>
+            <div class="dash-module-content">
+                <div class="title">Başvuru Formları</div>
+                <div class="desc">Başvuru formları ve soruları oluşturup düzenleyin.</div>
+            </div>
+        </a>
+
+        <a href="/payroll.html" class="dash-module-v2" data-perm="page.payroll">
+            <div class="dash-module-icon-v2 dmi-green">💰</div>
+            <div class="dash-module-content">
+                <div class="title">Prim Bordrosu</div>
+                <div class="desc">Personel prim dağıtımını hesaplayın, kıdem bazlı ek prim ayarlayın.</div>
+            </div>
+        </a>
+
+        <a href="/handbook.html" class="dash-module-v2" data-perm="page.handbook">
+            <div class="dash-module-icon-v2 dmi-blue">📖</div>
+            <div class="dash-module-content">
+                <div class="title">Personel Bilgi Merkezi</div>
+                <div class="desc">Kıyafet dökümanları, telsiz kodları ve personel rehberi.</div>
+            </div>
+        </a>
+
+        <a href="/settings.html" class="dash-module-v2" data-perm="page.settings">
+            <div class="dash-module-icon-v2 dmi-orange">⚙️</div>
+            <div class="dash-module-content">
+                <div class="title">Ayarlar</div>
+                <div class="desc">Sistem ayarları, kullanıcı yetkileri ve genel yapılandırma.</div>
+            </div>
+        </a>
+    </div>
+    
+    <!-- Departman kapak görseli -->
+    <div class="dash-cover">
+        <div class="dash-cover-text">
+            <h3 data-brand-name>Mission Row PD</h3>
+            <p>Los Santos Police Department</p>
+        </div>
+        <div class="dash-cover-emoji">🚔</div>
+    </div>
+    
+    <!-- Son aktiviteler -->
+    <div class="dash-activity-v2">
+        <div class="dash-activity-head-v2">
+            <div class="dash-activity-title-v2">
+                📋 Son Aktiviteler
+                <span class="p2-live-pill" id="liveStatus" style="margin-left:10px;">CANLI</span>
+            </div>
+            <button class="p2-refresh-btn" id="refreshBtn" onclick="manualRefresh()" title="Yenile">
+                <span class="icon">🔄</span> <span>Yenile</span>
+            </button>
+        </div>
+        <div class="dash-activity-list-v2" id="activityList">
+            <!-- Activity skeleton — 3 öğe placeholder -->
+            <div class="dash-activity-item-v2">
+                <div class="p1-skel-line" style="width:36px; height:36px; border-radius:10px; margin:0 14px 0 0; flex-shrink:0;"></div>
+                <div style="flex:1;">
+                    <div class="p1-skel-line w-70" style="height:13px; margin:4px 0;"></div>
+                    <div class="p1-skel-line w-40" style="height:11px; margin:6px 0 0;"></div>
+                </div>
+            </div>
+            <div class="dash-activity-item-v2">
+                <div class="p1-skel-line" style="width:36px; height:36px; border-radius:10px; margin:0 14px 0 0; flex-shrink:0;"></div>
+                <div style="flex:1;">
+                    <div class="p1-skel-line w-50" style="height:13px; margin:4px 0;"></div>
+                    <div class="p1-skel-line w-40" style="height:11px; margin:6px 0 0;"></div>
+                </div>
+            </div>
+            <div class="dash-activity-item-v2">
+                <div class="p1-skel-line" style="width:36px; height:36px; border-radius:10px; margin:0 14px 0 0; flex-shrink:0;"></div>
+                <div style="flex:1;">
+                    <div class="p1-skel-line w-70" style="height:13px; margin:4px 0;"></div>
+                    <div class="p1-skel-line w-40" style="height:11px; margin:6px 0 0;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* yönlendirildi */ }
+
+// SidebarSIZ tam ekran mod
+document.body.classList.add('dash-fullscreen');
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+
+// Kullanıcının yetkisi olmayan modül kartlarını gizle
+document.querySelectorAll('.dash-module-v2[data-perm]').forEach(el => {
+    if (!Perms.can(el.dataset.perm)) el.style.display = 'none';
+});
+
+// ─── Count-up sayım animasyonu (sadece ilk yüklemede) ────────
+// El'in mevcut sayısal değerinden hedefe easeOutCubic ile çıkar.
+// İlk yüklemede skeleton'dan geliyorsa 0'dan başlar; sonraki
+// yüklemelerde mevcut değerden hedefe geçer.
+function countUp(el, target, opts = {}) {
+    if (!el) return;
+    const duration = opts.duration || 900;
+    const suffix = opts.suffix || '';
+    const prefix = opts.prefix || '';
+    // Skeleton'dan geliyorsa 0, değilse mevcut değer
+    const isLoading = el.classList.contains('p2-loading');
+    const current = isLoading ? 0 : (parseInt(el.textContent.replace(/[^\d-]/g,'')) || 0);
+    el.classList.remove('p2-loading');
+    if (current === target) { el.textContent = `${prefix}${target}${suffix}`; return; }
+    const start = performance.now();
+    function tick(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const val = Math.round(current + (target - current) * eased);
+        el.textContent = `${prefix}${val}${suffix}`;
+        if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+async function init() {
+    try {
+        const user = await Auth.me();
+        Perms.invalidate();
+        const displayName = user.discord_display_name || user.discord_nick
+            || user.discord_server_name || user.display_name
+            || user.discord_global_name || user.discord_username || user.username;
+        const rankLabel = user.rank_name || user.rankName || user.role || '—';
+        document.getElementById('welcomeTitle').firstChild.textContent = `Hoş Geldin, ${displayName} `;
+        const rb = document.getElementById('roleBadge');
+        rb.textContent = rankLabel.toUpperCase();
+        rb.classList.remove('p2-loading');
+        loadStats();
+        loadActivity();
+    } catch (err) { console.error(err); }
+}
+
+async function loadStats() {
+    try {
+        // ── Aktif personel sayısı ──
+        const personJson = await fetchPublic('/personnel/public');
+        const persons = personJson.data || [];
+        countUp(document.getElementById('statPersonnel'), persons.length);
+        
+        // ── Mesaide olanlar ──
+        try {
+            const dutyRes = await api.get('/duty/active');
+            const dutyList = dutyRes?.data?.personnel || dutyRes?.data || [];
+            const dutyCount = Array.isArray(dutyList) ? dutyList.length : 0;
+            countUp(document.getElementById('statDuty'), dutyCount);
+        } catch {
+            const dutyCount = persons.filter(p => p.status === 'duty' || p.status === 'online').length;
+            countUp(document.getElementById('statDuty'), dutyCount);
+        }
+        
+        // ── Bekleyen başvuru ──
+        if (Auth.isAdmin()) {
+            try {
+                const apps = await api.get('/applications?status=pending');
+                countUp(document.getElementById('statApps'), (apps.data || []).length);
+            } catch {
+                countUp(document.getElementById('statApps'), 0);
+            }
+        } else {
+            const el = document.getElementById('statApps');
+            el.textContent = '—';
+            el.classList.remove('p2-loading');
+        }
+        
+        loadDutyDelta();
+    } catch (err) { console.error('loadStats:', err); }
+}
+
+// Bu hafta vs geçen hafta mesai karşılaştırması
+async function loadDutyDelta() {
+    const el = document.getElementById('statDelta');
+    try {
+        const now = new Date();
+        const thisMon = new Date(now);
+        thisMon.setDate(now.getDate() - now.getDay() + 1);
+        thisMon.setHours(0,0,0,0);
+        const lastMon = new Date(thisMon);
+        lastMon.setDate(thisMon.getDate() - 7);
+        
+        const iso = d => d.toISOString().slice(0,10);
+        
+        const [thisWeek, lastWeek] = await Promise.all([
+            api.get(`/duty/summary?week=${iso(thisMon)}`).catch(() => null),
+            api.get(`/duty/summary?week=${iso(lastMon)}`).catch(() => null),
+        ]);
+        
+        el.classList.remove('p2-loading');
+        if (!thisWeek?.data || !lastWeek?.data) { el.textContent = '—'; return; }
+        
+        const sumHours = obj => Object.values(obj).reduce((s, v) => s + (v.totalHours || 0), 0);
+        const tw = sumHours(thisWeek.data);
+        const lw = sumHours(lastWeek.data);
+        
+        let pct;
+        if (lw === 0) pct = tw > 0 ? 100 : 0;
+        else pct = Math.round(((tw - lw) / lw) * 100);
+        
+        const sign = pct >= 0 ? '+' : '';
+        countUp(el, Math.abs(pct), { prefix: `${sign}%${pct < 0 ? '-' : ''}` });
+        el.style.color = pct >= 0 ? '#86efac' : '#fca5a5';
+    } catch (err) {
+        console.error('loadDutyDelta:', err);
+        el.classList.remove('p2-loading');
+        el.textContent = '—';
+    }
+}
+
+// ─── Smart feed renderer ──────────────────────────────────
+// Tüm innerHTML'i yeniden yazmak yerine: önceki ID'lerle yeni
+// ID'leri karşılaştır, sadece yeni gelenleri animasyonla ekle,
+// kalkanları smooth çıkar. Böylece kullanıcı her 20 sn'de
+// listenin "atlaması"nı görmez, sadece değişiklik görür.
+let _lastFeedKeys = new Set();
+function activityKey(it) {
+    // Aynı içerik aynı zaman → aynı öğe (basit hash)
+    return `${it.icon}|${it.text}|${it.time}`;
+}
+
+async function loadActivity() {
+    try {
+        const [duty, leaves] = await Promise.all([
+            api.get('/duty/active').catch(() => ({ data: [] })),
+            Auth.isAdmin() ? api.get('/leaves?status=pending').catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+        ]);
+        
+        const items = [];
+        const dutyList = duty?.data?.personnel || duty?.data || [];
+        (Array.isArray(dutyList) ? dutyList : []).slice(0, 10).forEach(d => {
+            const name = cleanName(d.personnel?.ic_name || d.ic_name || 'Bilinmeyen');
+            const t = d.start_time || d.startTime || d.started_at || d.startedAt || d.created_at || new Date().toISOString();
+            items.push({
+                icon: '➡️',
+                color: 'green',
+                text: `${name} mesaide`,
+                time: t,
+            });
+        });
+        (leaves?.data || []).slice(0, 5).forEach(l => {
+            const name = cleanName(l.personnel?.ic_name || l.ic_name || 'Bilinmeyen');
+            items.push({
+                icon: '🌴',
+                color: 'orange',
+                text: `${name} izin talebi`,
+                time: l.created_at || new Date().toISOString(),
+            });
+        });
+        
+        items.sort((a, b) => new Date(b.time) - new Date(a.time));
+        
+        const c = document.getElementById('activityList');
+        
+        // İlk yükleme — skeleton'ı tamamen değiştir
+        const isFirstLoad = c.querySelector('.p1-skel-line') !== null;
+        
+        if (!items.length) {
+            c.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>Henüz aktivite yok</div></div>';
+            _lastFeedKeys = new Set();
+            return;
+        }
+        
+        const trimmed = items.slice(0, 20);
+        const newKeys = new Set(trimmed.map(activityKey));
+        
+        if (isFirstLoad) {
+            // İlk render: hepsini birden, stagger animasyonu ile
+            c.innerHTML = trimmed.map((it, i) => `
+                <div class="dash-activity-item-v2 p2-new" style="animation-delay: ${i * 40}ms;" data-key="${activityKey(it).replace(/"/g,'&quot;')}">
+                    <div class="dash-activity-icon-v2 dai-${it.color}">${it.icon}</div>
+                    <div class="dash-activity-content-v2">
+                        <div class="text">${escapeHtml(it.text)}</div>
+                        <div class="time">${relativeTime(it.time)}</div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            // Diff: kalkanları çıkar, yeni gelenleri ekle, kalanları güncelle (relativeTime)
+            // 1) Mevcut DOM öğelerinde olmayan key'leri yumuşakça çıkar
+            Array.from(c.children).forEach(el => {
+                const k = el.dataset.key;
+                if (k && !newKeys.has(k)) {
+                    el.classList.add('p2-leaving');
+                    setTimeout(() => el.remove(), 280);
+                }
+            });
+            // 2) Yeni listede olup DOM'da olmayanları en üste ekle
+            const oldKeys = new Set(Array.from(c.children).map(el => el.dataset.key).filter(Boolean));
+            trimmed.forEach((it, i) => {
+                const k = activityKey(it);
+                if (oldKeys.has(k)) {
+                    // Sadece zaman güncellensin (1dk önce → 2dk önce vs)
+                    const el = c.querySelector(`[data-key="${CSS.escape(k)}"]`);
+                    const tEl = el?.querySelector('.time');
+                    if (tEl) tEl.textContent = relativeTime(it.time);
+                } else {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'dash-activity-item-v2 p2-new';
+                    wrap.dataset.key = k;
+                    wrap.innerHTML = `
+                        <div class="dash-activity-icon-v2 dai-${it.color}">${it.icon}</div>
+                        <div class="dash-activity-content-v2">
+                            <div class="text">${escapeHtml(it.text)}</div>
+                            <div class="time">${relativeTime(it.time)}</div>
+                        </div>
+                    `;
+                    // Doğru pozisyona yerleştir
+                    const before = c.children[i] || null;
+                    c.insertBefore(wrap, before);
+                }
+            });
+        }
+        
+        _lastFeedKeys = newKeys;
+    } catch (err) { console.error('loadActivity:', err); }
+}
+
+// Manuel yenileme — refresh butonu için
+function manualRefresh() {
+    const btn = document.getElementById('refreshBtn');
+    btn.classList.add('spinning');
+    Promise.all([loadStats(), loadActivity()]).finally(() => {
+        setTimeout(() => btn.classList.remove('spinning'), 600);
+    });
+}
+
+// Arama
+document.getElementById('dashSearch').addEventListener('input', (e) => {
+    const term = e.target.value.trim();
+    if (term.length >= 2) {
+        clearTimeout(window._searchTimer);
+        window._searchTimer = setTimeout(() => {
+            window.location.href = `/personnel.html?search=${encodeURIComponent(term)}`;
+        }, 600);
+    }
+});
+
+init();
+setInterval(() => { loadStats(); loadActivity(); }, 20000);
+</script>
+</body>
+</html>

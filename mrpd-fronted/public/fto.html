@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FTO & FTS · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+/* ─── Layout ─── */
+.fto-grid { display: grid; grid-template-columns: 1fr 360px; gap: 18px; align-items: start; }
+@media (max-width: 1180px) { .fto-grid { grid-template-columns: 1fr; } }
+
+/* ─── Card wrapper ─── */
+.fto-card { background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.fto-card-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fto-card-title { font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+.fto-card-title .ico { width: 28px; height: 28px; border-radius: 7px; background: var(--primary-soft); display: grid; place-items: center; }
+.fto-card-count { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--bg-3); color: var(--text-dim); }
+
+/* ─── ASSIGNMENT CARDS GRID (yeni temiz tasarım) ─── */
+.assign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 10px;
+    padding: 14px;
+}
+.assign-card {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    transition: all 0.15s ease;
+    position: relative;
+    min-width: 0;
+}
+.assign-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+}
+
+.assign-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+.assign-row + .assign-row { margin-top: 8px; }
+
+.assign-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: #fff; font-weight: 700; font-size: 12px;
+    flex-shrink: 0;
+}
+.assign-avatar.trainee { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.assign-avatar.trainer { background: linear-gradient(135deg, #22c55e, #15803d); }
+
+.assign-info { min-width: 0; }
+.assign-label {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-mute);
+    margin-bottom: 2px;
+}
+.assign-label.trainee { color: #fcd34d; }
+.assign-label.trainer { color: #86efac; }
+.assign-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+.assign-username {
+    font-size: 10.5px;
+    color: var(--text-mute);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.assign-meta {
+    font-size: 10px;
+    color: var(--text-mute);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.assign-thread-btn {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+.assign-thread-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.assign-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+    position: relative;
+}
+.assign-divider::after {
+    content: '↓';
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-3);
+    padding: 0 8px;
+    font-size: 10px;
+    color: var(--text-mute);
+    font-weight: 700;
+}
+
+/* ─── Side panel rows (kompakt) ─── */
+.side-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+}
+.side-row:last-child { border-bottom: none; }
+.side-row:hover { background: rgba(255,255,255,0.02); }
+.side-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: #fff; font-weight: 700; font-size: 11px;
+    flex-shrink: 0;
+}
+.side-avatar.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.side-avatar.danger { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.side-info { flex: 1; min-width: 0; }
+.side-name { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-sub { font-size: 10px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-badge { padding: 2px 7px; border-radius: 5px; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+.side-badge.left { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+.side-badge.waiting { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+/* ─── Empty / sync ─── */
+.fto-empty { padding: 36px 16px; text-align: center; color: var(--text-mute); font-size: 12px; }
+.fto-empty .ico { font-size: 36px; opacity: 0.3; margin-bottom: 8px; }
+
+.sync-info { font-size: 10px; color: var(--text-mute); }
+.btn-sync { padding: 7px 12px; background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.btn-sync:hover { background: var(--primary-soft); color: #fff; }
+.btn-sync.spinning .ico { animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Search + filter bar ─── */
+.fto-toolbar { padding: 12px 14px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); }
+.fto-search { flex: 1; padding: 7px 12px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 12px; }
+.fto-search:focus { outline: none; border-color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div>
+                    <h1>📚 FTO & FTS Yönetimi</h1>
+                    <p>Eğitim atamaları — Discord forum'u ile senkron</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="sync-info" id="syncInfo">Yükleniyor...</span>
+                    <button class="btn-sync" style="background:var(--primary); color:#fff; border-color:var(--primary);" onclick="openCreateAssignModal()">
+                        <span class="ico">+</span> Yeni Atama
+                    </button>
+                    <button class="btn-sync" id="btnSync" onclick="loadAll(true)">
+                        <span class="ico">🔄</span> Senkron
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-row" id="statsRow"></div>
+        
+        <div class="fto-grid">
+            <!-- ANA: AKTİF FTO ATAMALARI -->
+            <div class="fto-card">
+                <div class="fto-card-head">
+                    <div class="fto-card-title">
+                        <span class="ico">📚</span>
+                        <span>Aktif FTO Atamaları</span>
+                    </div>
+                    <span class="fto-card-count" id="activeCount">0</span>
+                </div>
+                <div class="fto-toolbar">
+                    <input type="text" id="searchInput" class="fto-search" placeholder="🔍 İsim, kullanıcı adı veya callsign ara...">
+                </div>
+                <div id="activeList">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </div>
+            
+            <!-- YAN PANELLER -->
+            <div style="display:grid; gap:18px; position: sticky; top: 90px;">
+                <div class="fto-card">
+                    <div class="fto-card-head">
+                        <div class="fto-card-title">
+                            <span class="ico" style="background:rgba(245,158,11,0.15);">⏳</span>
+                            <span>FTO Bekleyenler</span>
+                        </div>
+                        <span class="fto-card-count" id="waitingCount">0</span>
+                    </div>
+                    <div id="waitingList" style="max-height: 400px; overflow-y: auto;">
+                        <div class="fto-empty"><div class="ico">⏳</div><div>Yükleniyor...</div></div>
+                    </div>
+                </div>
+                
+                <div class="fto-card">
+                    <div class="fto-card-head">
+                        <div class="fto-card-title">
+                            <span class="ico" style="background:rgba(239,68,68,0.15);">⚠️</span>
+                            <span>Discord'dan Çıkmış</span>
+                        </div>
+                        <span class="fto-card-count" id="orphanCount">0</span>
+                    </div>
+                    <div id="orphanList" style="max-height: 400px; overflow-y: auto;">
+                        <div class="fto-empty"><div class="ico">⚠️</div><div>Yükleniyor...</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* staff değil */ }
+        if (!Perms.require(PERM.PAGE_FTO)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('fto');
+
+// FTS'ler "Yeni Atama" butonunu göremez
+if (!Perms.can(PERM.FTO_CREATE)) {
+    const btnCreate = document.querySelector('.btn-sync[onclick="openCreateAssignModal()"]');
+    if (btnCreate) btnCreate.style.display = 'none';
+}
+
+let currentData = null;
+let isSyncing = false;
+
+function initials(name) {
+    if (!name) return '?';
+    // [504] Janothan Zetas | Taha → JZ
+    const cleaned = name.replace(/\[[^\]]+\]/g, '').replace(/\|.*$/, '').trim();
+    const parts = cleaned.split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map(p => p[0]?.toUpperCase()).join('') || '?';
+}
+
+function timeAgo(iso) {
+    if (!iso) return '—';
+    const diff = Date.now() - new Date(iso).getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'şimdi';
+    if (min < 60) return `${min}dk`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}sa`;
+    const d = Math.floor(hr / 24);
+    return `${d}g`;
+}
+
+function escapeHTML(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderActiveCard(f, showReportBtn = true) {
+    return `
+        <div class="assign-card" data-search="${escapeHTML((f.traineeDisplayName + ' ' + f.trainerDisplayName + ' ' + (f.traineeUsername||'') + ' ' + (f.trainerUsername||'')).toLowerCase())}">
+            <!-- TRAINEE -->
+            <div class="assign-row">
+                <div class="assign-avatar trainee">${initials(f.traineeDisplayName)}</div>
+                <div class="assign-info">
+                    <div class="assign-label trainee">▸ Trainee</div>
+                    <div class="assign-name" title="${escapeHTML(f.traineeDisplayName)}">${escapeHTML(f.traineeDisplayName)}</div>
+                    <div class="assign-username">@${escapeHTML(f.traineeUsername || '—')}</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                    <div class="assign-meta">${timeAgo(f.created_at)} önce</div>
+                    <a href="${f.threadUrl || '#'}" target="_blank" class="assign-thread-btn" title="Discord thread'i aç">↗</a>
+                    ${showReportBtn ? `<button class="assign-thread-btn report-write-btn"
+                        data-thread="${escapeHTML(f.thread_id || '')}"
+                        data-trainee="${escapeHTML(f.traineeDisplayName)}"
+                        data-trainee-id="${escapeHTML(f.traineeId || '')}"
+                        data-trainer="${escapeHTML(f.trainerDisplayName)}"
+                        data-trainer-id="${escapeHTML(f.trainerId || '')}"
+                        title="Rapor yaz" style="cursor:pointer; font-size:13px;">📝</button>` : ''}
+                </div>
+            </div>
+
+            <div class="assign-divider"></div>
+
+            <!-- FTO (TRAINER) -->
+            <div class="assign-row">
+                <div class="assign-avatar trainer">${initials(f.trainerDisplayName)}</div>
+                <div class="assign-info">
+                    <div class="assign-label trainer">★ FTO</div>
+                    <div class="assign-name" title="${escapeHTML(f.trainerDisplayName)}">${escapeHTML(f.trainerDisplayName)}</div>
+                    <div class="assign-username">@${escapeHTML(f.trainerUsername || '—')}</div>
+                </div>
+                <div></div>
+            </div>
+        </div>
+    `;
+}
+
+function renderActiveList(items) {
+    const el = document.getElementById('activeList');
+    if (!items.length) {
+        el.innerHTML = `<div class="fto-empty"><div class="ico">📚</div><div>Aktif FTO ataması yok</div></div>`;
+        return;
+    }
+    el.innerHTML = `<div class="assign-grid">${items.map(renderActiveCard).join('')}</div>`;
+}
+
+function renderSidePanels(d) {
+    // FTO bekleyenler
+    document.getElementById('waitingCount').textContent = d.waitingForFTO.length;
+    const waitEl = document.getElementById('waitingList');
+    if (!d.waitingForFTO.length) {
+        waitEl.innerHTML = `<div class="fto-empty"><div class="ico">✨</div><div>Bekleyen aday yok</div></div>`;
+    } else {
+        waitEl.innerHTML = d.waitingForFTO.map(c => `
+            <div class="side-row">
+                <div class="side-avatar warning">${initials(c.displayName || c.username)}</div>
+                <div class="side-info">
+                    <div class="side-name">${escapeHTML(c.displayName || c.username)}</div>
+                    <div class="side-sub">@${escapeHTML(c.username)} · ${timeAgo(c.joinedAt)} önce katıldı</div>
+                </div>
+                <span class="side-badge waiting">FTO YOK</span>
+            </div>
+        `).join('');
+    }
+    
+    // Orphan
+    document.getElementById('orphanCount').textContent = d.orphans.length;
+    const orphEl = document.getElementById('orphanList');
+    if (!d.orphans.length) {
+        orphEl.innerHTML = `<div class="fto-empty"><div class="ico">✨</div><div>Sorun yok, hepsi tamam</div></div>`;
+    } else {
+        orphEl.innerHTML = d.orphans.map(f => {
+            const left = f.leftWho === 'both' ? 'Hem trainee hem FTO'
+                      : f.leftWho === 'trainee' ? f.traineeDisplayName
+                      : f.trainerDisplayName;
+            const role = f.leftWho === 'trainee' ? 'trainee' : f.leftWho === 'trainer' ? 'FTO' : 'her ikisi';
+            return `
+                <div class="side-row">
+                    <div class="side-avatar danger">⚠</div>
+                    <div class="side-info">
+                        <div class="side-name" title="${escapeHTML(f.threadName)}">${escapeHTML(f.threadName)}</div>
+                        <div class="side-sub">${escapeHTML(left)} (${role}) çıkmış</div>
+                    </div>
+                    <a href="${f.threadUrl}" target="_blank" class="assign-thread-btn" title="Thread'i aç">↗</a>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+async function loadAll(manual = false) {
+    if (isSyncing) return;
+    isSyncing = true;
+
+    const btn = document.getElementById('btnSync');
+    if (manual) {
+        btn.classList.add('spinning');
+        btn.disabled = true;
+        document.getElementById('syncInfo').textContent = 'Senkron ediliyor...';
+    }
+
+    const prevData = currentData;
+
+    try {
+        const res = await api.get('/fto/discord-sync');
+        const d = res.data;
+        currentData = d;
+
+        // Stats satırı — FTS sadece sayıları görür
+        document.getElementById('statsRow').innerHTML = `
+            <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#22c55e,#15803d);">✅</div><div class="stat-content"><div class="label">Aktif Atama</div><div class="value">${d.stats.activeCount}</div></div></div>
+            <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">⏳</div><div class="stat-content"><div class="label">FTO Bekleyen</div><div class="value">${d.stats.waitingCount}</div></div></div>
+            <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#ef4444,#b91c1c);">⚠️</div><div class="stat-content"><div class="label">Orphan</div><div class="value">${d.stats.orphanCount}</div></div></div>
+            <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">📁</div><div class="stat-content"><div class="label">Tamamlanan</div><div class="value">${d.stats.closedCount}</div></div></div>
+        `;
+
+        document.getElementById('syncInfo').textContent = d.stats.lastSync
+            ? `Son senkron: ${timeAgo(d.stats.lastSync)} önce`
+            : 'Henüz senkron edilmedi';
+
+        // ─── FTS kısıtlı görünüm ───────────────────────────
+        if (Perms.can(PERM.FTO_COUNT_ONLY) && !Perms.can(PERM.FTO_READ)) {
+            applyFTSView(d);
+            return;
+        }
+
+        // ─── Normal görünüm (FTO / FTOS / FTOD / yönetim) ─
+        document.getElementById('activeCount').textContent = d.active.length;
+        renderActiveList(d.active);
+        renderSidePanels(d);
+
+    } catch (err) {
+        currentData = prevData;
+        document.getElementById('syncInfo').textContent = prevData
+            ? `Hata — önceki veri gösteriliyor`
+            : 'Bağlantı hatası';
+        if (manual) showError('FTO verileri yüklenemedi: ' + err.message);
+    } finally {
+        isSyncing = false;
+        if (manual) setTimeout(() => {
+            btn.classList.remove('spinning');
+            btn.disabled = false;
+        }, 500);
+    }
+}
+
+// FTS için kısıtlı görünüm — sadece kendi ataması + genel sayılar
+function applyFTSView(d) {
+    const myId = Perms.discordId();
+
+    // Kendi atamasını bul
+    const myAssignment = d.active.find(f => f.traineeId === myId);
+
+    document.getElementById('activeCount').textContent = d.active.length;
+
+    if (myAssignment) {
+        document.getElementById('activeList').innerHTML = `
+            <div style="padding:14px;">
+                <div style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.25); border-radius:10px; padding:14px 16px; margin-bottom:10px;">
+                    <div style="font-size:11px; font-weight:800; letter-spacing:1px; color:#86efac; margin-bottom:8px;">SENİN ATAMAN</div>
+                    ${renderActiveCard(myAssignment, false)}
+                </div>
+                <div style="padding:10px 12px; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2); border-radius:8px; font-size:12px; color:#a5b4fc;">
+                    📊 Sistemde toplam <strong>${d.active.length}</strong> aktif eğitim ataması mevcut.
+                </div>
+            </div>
+        `;
+    } else {
+        document.getElementById('activeList').innerHTML = `
+            <div style="padding:20px; text-align:center; color:var(--text-mute);">
+                <div style="font-size:32px; opacity:0.3; margin-bottom:8px;">📚</div>
+                <div style="font-size:13px;">Henüz bir FTO atamanız yok.</div>
+                <div style="margin-top:10px; padding:10px 12px; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2); border-radius:8px; font-size:12px; color:#a5b4fc; display:inline-block;">
+                    Sistemde toplam <strong>${d.active.length}</strong> aktif eğitim ataması mevcut.
+                </div>
+            </div>
+        `;
+    }
+
+    // FTS yan panelleri gizle (orphan, bekleyenler içerikleri gizli — sadece sayı)
+    document.getElementById('waitingCount').textContent = d.waitingForFTO.length;
+    document.getElementById('waitingList').innerHTML = `
+        <div style="padding:14px; text-align:center; color:var(--text-mute); font-size:12px;">
+            🔒 Bu listeyi görüntüleme yetkiniz yok.
+        </div>
+    `;
+    document.getElementById('orphanCount').textContent = d.orphans.length;
+    document.getElementById('orphanList').innerHTML = `
+        <div style="padding:14px; text-align:center; color:var(--text-mute); font-size:12px;">
+            🔒 Bu listeyi görüntüleme yetkiniz yok.
+        </div>
+    `;
+
+    // Arama kutusunu devre dışı bırak
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.disabled = true;
+        searchInput.placeholder = '🔒 Arama yetkiniz yok';
+    }
+}
+
+// Search filter
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!currentData) return;
+    if (!q) {
+        renderActiveList(currentData.active);
+        return;
+    }
+    const filtered = currentData.active.filter(f => {
+        const search = (f.traineeDisplayName + ' ' + f.trainerDisplayName + ' ' + (f.traineeUsername||'') + ' ' + (f.trainerUsername||'')).toLowerCase();
+        return search.includes(q);
+    });
+    renderActiveList(filtered);
+    document.getElementById('activeCount').textContent = `${filtered.length}/${currentData.active.length}`;
+});
+
+// ─────────────────────────────────────────────────────────────
+// fto.html'in <script> bloğuna ekle (loadAll() çağrısından ÖNCE)
+// ─────────────────────────────────────────────────────────────
+
+function closeAssignModal() {
+    const m = document.getElementById('assignModalRoot');
+    if (m) m.remove();
+}
+
+function openCreateAssignModal() {
+    if (!currentData) {
+        alert('Veriler henüz yüklenmedi, biraz bekle ve tekrar dene');
+        return;
+    }
+
+    const trainerUsers = new Map();
+    const traineeUsers = new Map();
+
+    // 1. Önce backend'in gönderdiği ftoMembers / members listesini kullan (varsa)
+    const ftoKeywords = ['[fto]', 'field training officer', 'ftod', 'ftos'];
+    const ftsKeywords = ['[fts]', 'field training student'];
+    const isFTO = roles => ftoKeywords.some(k => roles.some(r => r.includes(k)));
+    const isFTS = roles => ftsKeywords.some(k => roles.some(r => r.includes(k)));
+
+    if (currentData.ftoMembers && currentData.ftoMembers.length) {
+        // Backend açıkça FTO listesi döndürüyorsa doğrudan kullan
+        currentData.ftoMembers.forEach(m => {
+            const id = m.discordId || m.id;
+            if (id) trainerUsers.set(id, { id, name: m.displayName || m.username, username: m.username });
+        });
+    } else if (currentData.members && currentData.members.length) {
+        // Tüm üye listesi varsa rollere göre ayır
+        currentData.members.forEach(m => {
+            const id = m.discordId || m.id;
+            if (!id) return;
+            const roles = (m.roles || []).map(r => (typeof r === 'string' ? r : r.name || '').toLowerCase());
+            const entry = { id, name: m.displayName || m.username, username: m.username };
+            if (isFTS(roles)) {
+                traineeUsers.set(id, entry);
+            } else if (isFTO(roles)) {
+                trainerUsers.set(id, entry);
+            }
+        });
+    }
+
+    // 2. Aktif atamalardan trainer / trainee'leri ekle (her durumda)
+    (currentData.active || []).forEach(f => {
+        if (f.trainerId) trainerUsers.set(f.trainerId, { id: f.trainerId, name: f.trainerDisplayName, username: f.trainerUsername });
+        if (f.traineeId) traineeUsers.set(f.traineeId, { id: f.traineeId, name: f.traineeDisplayName, username: f.traineeUsername });
+    });
+
+    // 3. waitingForFTO = FTS öğrencileri → yalnızca trainee listesine
+    (currentData.waitingForFTO || []).forEach(c => {
+        traineeUsers.set(c.discordId, { id: c.discordId, name: c.displayName || c.username, username: c.username });
+    });
+
+    // 4. Son çare: FTO listesi hala boşsa tüm bilinenleri göster (waitingForFTO hariç)
+    if (trainerUsers.size === 0) {
+        const waitingIds = new Set((currentData.waitingForFTO || []).map(c => c.discordId));
+        (currentData.active || []).forEach(f => {
+            if (f.trainerId && !waitingIds.has(f.trainerId))
+                trainerUsers.set(f.trainerId, { id: f.trainerId, name: f.trainerDisplayName, username: f.trainerUsername });
+            if (f.traineeId && !waitingIds.has(f.traineeId))
+                trainerUsers.set(f.traineeId, { id: f.traineeId, name: f.traineeDisplayName, username: f.traineeUsername });
+        });
+    }
+
+    if (trainerUsers.size === 0 && traineeUsers.size === 0) {
+        alert('Discord üye listesi boş. Bot çalışıyor mu?');
+        return;
+    }
+
+    const sortFn = (a, b) => (a.name || '').localeCompare(b.name || '');
+    const trainerOptions = Array.from(trainerUsers.values()).sort(sortFn).map(u =>
+        `<option value="${u.id}">${escapeHTML(u.name || '?')} (@${escapeHTML(u.username || '—')})</option>`
+    ).join('');
+    const traineeOptions = Array.from(traineeUsers.values()).sort(sortFn).map(u =>
+        `<option value="${u.id}">${escapeHTML(u.name || '?')} (@${escapeHTML(u.username || '—')})</option>`
+    ).join('');
+    
+    // Modal'ı body'ye direkt ekle
+    const modalHTML = `
+        <div id="assignModalRoot" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target.id==='assignModalRoot') closeAssignModal()">
+            <div style="background: var(--bg-2, #1a1a2e); border:1px solid var(--border, #333); border-radius:14px; max-width:500px; width:100%; max-height:90vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+                <div style="padding:18px 22px; border-bottom:1px solid var(--border, #333); display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0; color:#fff; font-size:16px;">+ Yeni FTO Ataması</h3>
+                    <button onclick="closeAssignModal()" style="background:none; border:none; color:#888; font-size:22px; cursor:pointer; padding:0; line-height:1;">×</button>
+                </div>
+                
+                <div style="padding:22px; display:grid; gap:14px;">
+                    <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); padding:10px 12px; border-radius:8px; font-size:12px; color:#fcd34d;">
+                        💡 Discord forum'unda otomatik thread açılır, ikisi de etiketlenir.
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; margin-bottom:6px; font-size:12px; color:#aaa;">★ FTO (Eğitmen)</label>
+                        <select id="fto_trainer" style="width:100%; padding:10px; background:#111; border:1px solid #333; border-radius:8px; color:#fff; font-size:13px;">
+                            <option value="">— Seç —</option>
+                            ${trainerOptions}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display:block; margin-bottom:6px; font-size:12px; color:#aaa;">▸ Trainee (Aday)</label>
+                        <select id="fto_trainee" style="width:100%; padding:10px; background:#111; border:1px solid #333; border-radius:8px; color:#fff; font-size:13px;">
+                            <option value="">— Seç —</option>
+                            ${traineeOptions}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; margin-bottom:6px; font-size:12px; color:#aaa;">📝 Notlar (opsiyonel)</label>
+                        <textarea id="fto_notes" rows="2" style="width:100%; padding:10px; background:#111; border:1px solid #333; border-radius:8px; color:#fff; font-size:13px; resize:vertical; font-family:inherit;" placeholder="Örn: Gece vardiyası eğitimi"></textarea>
+                    </div>
+                    
+                    <div id="fto_modal_error" style="display:none; padding:10px 12px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; color:#fca5a5; font-size:12px;"></div>
+                </div>
+                
+                <div style="padding:14px 22px; border-top:1px solid var(--border, #333); display:flex; gap:10px; justify-content:flex-end;">
+                    <button onclick="closeAssignModal()" style="padding:9px 18px; background:transparent; color:#aaa; border:1px solid #333; border-radius:8px; cursor:pointer; font-size:13px;">İptal</button>
+                    <button id="fto_submit_btn" onclick="submitCreateAssign()" style="padding:9px 18px; background:#3b82f6; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;">✅ Oluştur</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function showAssignModalError(msg) {
+    const el = document.getElementById('fto_modal_error');
+    if (el) {
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+}
+
+async function submitCreateAssign() {
+    const trainerEl = document.getElementById('fto_trainer');
+    const traineeEl = document.getElementById('fto_trainee');
+    const notesEl = document.getElementById('fto_notes');
+    const btn = document.getElementById('fto_submit_btn');
+    
+    if (!trainerEl || !traineeEl) return;
+    
+    const trainerId = trainerEl.value;
+    const traineeId = traineeEl.value;
+    const notes = (notesEl?.value || '').trim();
+    
+    if (!trainerId) { showAssignModalError('FTO seç'); return; }
+    if (!traineeId) { showAssignModalError('Trainee seç'); return; }
+    if (trainerId === traineeId) { showAssignModalError('FTO ve trainee aynı kişi olamaz'); return; }
+    
+    btn.disabled = true;
+    btn.textContent = '⏳ Oluşturuluyor...';
+    
+    try {
+        const res = await api.post('/fto/create', { trainerId, traineeId, notes });
+        if (res.success) {
+            closeAssignModal();
+            if (typeof showSuccess === 'function') showSuccess('✅ FTO ataması oluşturuldu, Discord thread açıldı');
+            else alert('✅ FTO ataması oluşturuldu');
+            setTimeout(() => loadAll(true), 3000);
+        } else {
+            showAssignModalError(res.message || 'Hata oluştu');
+            btn.disabled = false;
+            btn.textContent = '✅ Oluştur';
+        }
+    } catch (e) {
+        showAssignModalError('İstek başarısız: ' + (e?.message || e));
+        btn.disabled = false;
+        btn.textContent = '✅ Oluştur';
+    }
+}
+
+// ─── FTO RAPOR YAZMA ───────────────────────────────────────────
+let _reportMeta = {};
+
+document.getElementById('activeList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.report-write-btn');
+    if (!btn) return;
+    openReportModal(btn.dataset.thread, btn.dataset.trainee, btn.dataset.traineeId, btn.dataset.trainer, btn.dataset.trainerId);
+});
+
+function closeReportModal() {
+    const m = document.getElementById('ftoReportModalRoot');
+    if (m) m.remove();
+}
+
+function openReportModal(threadId, traineeName, traineeId, trainerName, trainerId) {
+    if (!threadId) { if (typeof showError === 'function') showError('Thread ID bulunamadı'); return; }
+    _reportMeta = { threadId, traineeName, traineeId, trainerName, trainerId };
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const inp = (name, placeholder = '', type = 'text', extra = '') =>
+        `<input name="${name}" type="${type}" placeholder="${placeholder}" ${extra}
+            style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; border-radius:7px; color:#fff; font-size:12px; box-sizing:border-box;">`;
+
+    const ta = (name, placeholder = '', rows = 2) =>
+        `<textarea name="${name}" rows="${rows}" placeholder="${placeholder}"
+            style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; border-radius:7px; color:#fff; font-size:12px; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>`;
+
+    const field = (label, content) =>
+        `<div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; color:#aaa; font-weight:600;">${label}</label>
+            ${content}
+        </div>`;
+
+    const sectionHead = (title) =>
+        `<div style="font-size:10px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--primary,#3b82f6); padding: 4px 0 2px; border-bottom:1px solid #222; margin-top:4px;">${title}</div>`;
+
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="ftoReportModalRoot" style="position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; display:flex; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto;" onclick="if(event.target.id==='ftoReportModalRoot') closeReportModal()">
+            <div style="background:var(--bg-2,#1a1a2e); border:1px solid var(--border,#333); border-radius:14px; max-width:560px; width:100%; box-shadow:0 24px 64px rgba(0,0,0,0.6); margin:auto;">
+                <div style="padding:16px 20px; border-bottom:1px solid #2a2a3e; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:15px; font-weight:700; color:#fff;">📝 FTS Raporu</div>
+                        <div style="font-size:11px; color:#aaa; margin-top:2px;">FTS: <strong style="color:#fcd34d;">${escapeHTML(traineeName)}</strong> · FTO: <strong style="color:#86efac;">${escapeHTML(trainerName)}</strong></div>
+                    </div>
+                    <button onclick="closeReportModal()" style="background:none; border:none; color:#666; font-size:22px; cursor:pointer; padding:0; line-height:1;">×</button>
+                </div>
+
+                <form id="ftoReportForm" style="padding:20px; display:grid; gap:10px;">
+                    ${sectionHead('📋 Temel Bilgiler')}
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        ${field('Tarih', inp('report_date', '', 'date', `value="${today}"`))}
+                        ${field('Devriye Birimi', inp('patrol_unit', 'Örn: A3, B2...'))}
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        ${field('Saat Başlangıç', inp('shift_start', '', 'time'))}
+                        ${field('Saat Bitiş', inp('shift_end', '', 'time'))}
+                    </div>
+
+                    ${sectionHead('⚡ FTS Değerlendirmesi')}
+                    ${field("FTS'nin telsiz kullanımı", ta('radio_usage', 'Telsiz kullanımı nasıldı?'))}
+                    ${field("FTS'nin araç sürüşü", ta('vehicle_driving', 'Araç sürüşü nasıldı?'))}
+                    ${field("FTS'nin olaylara nasıl yaklaştığı", ta('incident_approach', 'Olaylara yaklaşımı...'))}
+                    ${field("FTS'nin tüzüğe uyumu", ta('regulation_compliance', 'Tüzüğe uydu mu?'))}
+                    ${field("FTS'nin hiyerarşiye uyumu", ta('hierarchy_compliance', 'Hiyerarşiye uydu mu?'))}
+                    ${field("FTS'nin sivillerle iletişimi", ta('civilian_communication', 'Sivillerle nasıl ilgilendi?'))}
+                    ${field("FTS'nin üslubu", ta('conduct', 'Üslubu nasıldı?'))}
+                    ${field("FTS'nin diğer memurlarla iletişimi", ta('officer_communication', 'Diğer memurlarla iletişimi...'))}
+                    ${field("Felony stop şablona uyumu", ta('felony_stop_compliance', 'Felony stop gibi durumlarda şablona uydu mu?'))}
+                    ${field("FTS'nin çevreyle etkileşimi", ta('environment_interaction', 'Çevresiyle etkileşimi...'))}
+
+                    ${sectionHead('📊 Genel')}
+                    ${field("FTO'nun genel görüşü", ta('general_view', 'Genel değerlendirme...', 3))}
+                    ${field("FTS'nin Hataları", ta('fts_errors', 'Hataları nelerdi?', 2))}
+                    ${field('İmza / Ek Not', inp('signature', 'Rapor yazan FTO ismi veya not...'))}
+
+                    <div id="ftoReportError" style="display:none; padding:8px 12px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:7px; color:#fca5a5; font-size:12px;"></div>
+                </form>
+
+                <div style="padding:14px 20px; border-top:1px solid #2a2a3e; display:flex; gap:10px; justify-content:flex-end;">
+                    <button onclick="closeReportModal()" style="padding:8px 16px; background:transparent; color:#aaa; border:1px solid #333; border-radius:8px; cursor:pointer; font-size:13px;">İptal</button>
+                    <button id="ftoReportSubmitBtn" onclick="submitReport()" style="padding:8px 16px; background:#3b82f6; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;">💾 Raporu Kaydet</button>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+async function submitReport() {
+    const form = document.getElementById('ftoReportForm');
+    const btn  = document.getElementById('ftoReportSubmitBtn');
+    const errEl = document.getElementById('ftoReportError');
+    if (!form) return;
+
+    const fd = new FormData(form);
+    const payload = {
+        thread_id:              _reportMeta.threadId,
+        trainer_discord_id:     _reportMeta.trainerId || null,
+        trainee_discord_id:     _reportMeta.traineeId || null,
+        trainer_name:           _reportMeta.trainerName,
+        trainee_name:           _reportMeta.traineeName,
+        report_date:            fd.get('report_date') || null,
+        shift_start:            fd.get('shift_start') || null,
+        shift_end:              fd.get('shift_end') || null,
+        patrol_unit:            fd.get('patrol_unit') || null,
+        radio_usage:            fd.get('radio_usage') || null,
+        vehicle_driving:        fd.get('vehicle_driving') || null,
+        incident_approach:      fd.get('incident_approach') || null,
+        regulation_compliance:  fd.get('regulation_compliance') || null,
+        hierarchy_compliance:   fd.get('hierarchy_compliance') || null,
+        civilian_communication: fd.get('civilian_communication') || null,
+        conduct:                fd.get('conduct') || null,
+        officer_communication:  fd.get('officer_communication') || null,
+        felony_stop_compliance: fd.get('felony_stop_compliance') || null,
+        environment_interaction:fd.get('environment_interaction') || null,
+        general_view:           fd.get('general_view') || null,
+        fts_errors:             fd.get('fts_errors') || null,
+        signature:              fd.get('signature') || null,
+    };
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Kaydediliyor...';
+    errEl.style.display = 'none';
+
+    try {
+        await api.post('/fto/reports', payload);
+        closeReportModal();
+        if (typeof showSuccess === 'function') showSuccess('✅ Rapor kaydedildi');
+    } catch (e) {
+        errEl.textContent = e.message || 'Hata oluştu';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '💾 Raporu Kaydet';
+    }
+}
+
+loadAll();
+setInterval(() => loadAll(false), 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Duyurular · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>Duyurular</h1>
+            <p>Departman duyuruları ve önemli bilgilendirmeler</p>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-card-head">
+                <div class="table-card-title">📢 Aktif Duyurular</div>
+                <button class="btn btn-primary" onclick="openCreateModal()">+ Yeni Duyuru</button>
+            </div>
+            <div id="announcementsList" style="padding: 18px;">
+                ${getDemoAnnouncements()}
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('announcements');
+
+function getDemoAnnouncements() {
+    return [
+        { 
+            title: 'Yeni Yönetim Sistemi Aktif!', 
+            body: 'MRPD yönetim sistemi tamamen yenilendi. Bot ile entegre çalışan yeni site, mesai takibi, personel yönetimi ve daha fazlası.',
+            type: 'info', date: Date.now() - 86400000, author: 'admin'
+        },
+        { 
+            title: 'Bot Otomatik Senkron', 
+            body: 'Discord botumuz artık her 5 dakikada bir personel listesini siteye senkronize ediyor. Yeni gelenler otomatik eklenir, ayrılanlar otomatik silinir.',
+            type: 'success', date: Date.now() - 172800000, author: 'admin'
+        },
+        { 
+            title: 'Mesai Sıralama Yenilendi', 
+            body: 'Mesai sayfasında artık liderlik tablosu, CSV export ve süre ekleme/çıkarma özellikleri var.',
+            type: 'info', date: Date.now() - 259200000, author: 'admin'
+        },
+    ];
+}
+
+const announcementsList = document.getElementById('announcementsList');
+const announcements = [
+    { title: 'Yeni Yönetim Sistemi Aktif!', body: 'MRPD yönetim sistemi tamamen yenilendi.', type: 'info', date: Date.now() - 86400000, author: 'admin' },
+    { title: 'Bot Otomatik Senkron', body: 'Discord botumuz artık her 5 dakikada bir personel listesini siteye senkronize ediyor.', type: 'success', date: Date.now() - 172800000, author: 'admin' },
+    { title: 'Mesai Sıralama Yenilendi', body: 'Mesai sayfasında artık liderlik tablosu ve CSV export var.', type: 'info', date: Date.now() - 259200000, author: 'admin' },
+];
+
+announcementsList.innerHTML = announcements.map(a => {
+    const typeMap = {
+        info: { icon: 'ℹ️', color: '#3b82f6', label: 'Bilgi' },
+        success: { icon: '✅', color: '#22c55e', label: 'Başarılı' },
+        warning: { icon: '⚠️', color: '#f59e0b', label: 'Dikkat' },
+        danger: { icon: '🚨', color: '#ef4444', label: 'Önemli' },
+    };
+    const t = typeMap[a.type] || typeMap.info;
+    
+    return `
+        <div style="background: var(--bg-3); border-left: 4px solid ${t.color}; border-radius: 10px; padding: 18px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="font-size: 24px;">${t.icon}</div>
+                    <div>
+                        <div style="font-weight: 700; color: #fff; font-size: 15px;">${escapeHtml(a.title)}</div>
+                        <div style="font-size: 11px; color: var(--text-mute); margin-top: 2px;">
+                            ${escapeHtml(a.author)} · ${relativeTime(a.date)}
+                        </div>
+                    </div>
+                </div>
+                <span class="pill" style="background: ${t.color}25; color: ${t.color}; border: 1px solid ${t.color}50;">${t.label}</span>
+            </div>
+            <p style="color: var(--text-dim); font-size: 13px; line-height: 1.6; margin-top: 10px;">${escapeHtml(a.body)}</p>
+        </div>
+    `;
+}).join('');
+
+function openCreateModal() {
+    showModal({
+        title: 'Yeni Duyuru',
+        body: `
+            <form id="annForm">
+                <div class="form-group">
+                    <label>Başlık *</label>
+                    <input name="title" required maxlength="100" />
+                </div>
+                <div class="form-group">
+                    <label>Tip</label>
+                    <select name="type">
+                        <option value="info">ℹ️ Bilgi</option>
+                        <option value="success">✅ Başarılı</option>
+                        <option value="warning">⚠️ Dikkat</option>
+                        <option value="danger">🚨 Önemli</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>İçerik *</label>
+                    <textarea name="body" required maxlength="2000" style="min-height: 120px;"></textarea>
+                </div>
+            </form>
+        `,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: '+ Oluştur', class: 'btn-primary', onClick: () => {
+                showSuccess('Duyuru özelliği yakında!');
+                closeModal();
+            }},
+        ],
+    });
+}
+</script>
+</body>
+</html>

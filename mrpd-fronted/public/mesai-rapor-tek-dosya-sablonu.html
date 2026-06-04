@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<!--
+  MRPD Mesai Yedek Raporu — TEK DOSYA ŞABLONU
+  ============================================
+  Backend bu dosyayı yüklemeden önce {{REPORT_DATA_JSON}} placeholder'ını
+  gerçek JSON ile değiştirir, sonra Discord embed'ine ek olarak ekler.
+  Dosya tamamen offline çalışır; Chart.js sadece grafik için CDN'den
+  yüklenir. CDN ulaşılamazsa metin tablosu yine açılır.
+  
+  Backend kontratı — şu placeholder'ları doldur:
+    {{REPORT_DATA_JSON}}      — Tüm rapor JSON (escape edilmiş)
+    
+  REPORT_DATA_JSON şu şekilde olmalı:
+  {
+    "guild_name": "Blaine County Sheriff Office",
+    "guild_short": "BCSO",
+    "guild_id": "1361758514808230172",
+    "actor_name": "neo",
+    "actor_discord": "@neocxc",
+    "actor_id": "262611520909869056",
+    "created_at": "2026-04-03T11:00:22.000Z",
+    "total_minutes": 34810,
+    "active_now_count": 0,
+    "profile_matched_count": 24,
+    "users_count": 26,
+    "unit_summary": {
+      "Emergency Response": { "total_hours": 95.2, "active": 0, "member_count": 4 },
+      "Criminal Investigation": { "total_hours": 88.0, "active": 0, "member_count": 5 },
+      ...
+    },
+    "users": [
+      { "name": "Henry Black", "callsign": "637", "rank_name": "Officer III",
+        "rank_color": "#fbbf24", "units": ["Emergency Response"],
+        "total_minutes": 6493, "is_active": false },
+      ...
+    ],
+    "sha256": "f98c4c5f5880040ee4956b388f1ab9e7155bf90e65a13c8b9265a4cec3894591"
+  }
+-->
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mesai Yedek Raporu</title>
+<style>
+/* ============================================================
+   STİLLER — TÜM CSS BU DOSYANIN İÇİNDE (standalone)
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+    background: #0a0a0f;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 24px 16px;
+}
+
+.wrap { max-width: 1280px; margin: 0 auto; }
+
+/* Banner */
+.banner {
+    background: linear-gradient(180deg, #1a1a2e, #0f0f1e);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+}
+.banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #6366f1, transparent);
+    opacity: 0.6;
+}
+.banner-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.banner-pill {
+    display: inline-block;
+    background: rgba(99,102,241,0.15);
+    color: #a5b4fc;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border: 1px solid rgba(99,102,241,0.3);
+    margin-right: 10px;
+}
+.banner h1 { display: inline; font-size: 22px; color: #fff; font-weight: 700; }
+
+.bot-badge {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.bot-icon {
+    width: 36px; height: 36px;
+    background: #6366f1;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.bot-name { font-size: 13px; font-weight: 700; color: #fff; }
+.bot-desc { font-size: 10px; color: #94a3b8; }
+.bot-footer { font-size: 9px; color: #64748b; font-style: italic; margin-top: 2px; }
+
+.banner-desc { color: #cbd5e1; font-size: 13px; line-height: 1.55; margin-bottom: 14px; max-width: 720px; }
+
+.meta {
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 12px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 12px;
+}
+.meta-item { display: flex; align-items: center; gap: 8px; color: #94a3b8; }
+.meta-item .label { color: #94a3b8; }
+.meta-item .value { color: #fff; font-weight: 600; }
+.meta-item .chip {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #94a3b8;
+    font-family: "Courier New", monospace;
+}
+
+/* Tabs */
+.tabs {
+    display: inline-flex;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 5px;
+    gap: 2px;
+    margin-bottom: 20px;
+}
+.tab {
+    padding: 9px 18px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.tab:hover { color: #fff; }
+.tab.active {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+}
+
+.pane { display: none; }
+.pane.active { display: block; }
+
+/* Stats grid */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.stat {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+.stat .label {
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.stat .value {
+    font-size: 30px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.stat .value .frac { color: #94a3b8; font-weight: 500; font-size: 22px; }
+.stat .sub { font-size: 11px; color: #94a3b8; margin-top: 8px; line-height: 1.4; }
+
+/* SHA */
+.sha {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+.sha .label {
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.sha .hash {
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    color: #fff;
+    word-break: break-all;
+    line-height: 1.5;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.sha .desc { font-size: 11px; color: #94a3b8; margin-top: 8px; line-height: 1.4; }
+
+/* Info banner */
+.info-banner {
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-left: 3px solid #60a5fa;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 22px;
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.55;
+}
+.info-banner strong { color: #93c5fd; }
+
+/* Section head */
+.sec-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 28px 0 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.sec-head h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+}
+.sec-head .pill-count {
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.3);
+    color: #a5b4fc;
+    padding: 3px 11px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Charts */
+.chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+}
+@media (max-width: 1100px) { .chart-grid { grid-template-columns: 1fr; } }
+.chart-card {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 18px;
+}
+.chart-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+.chart-canvas-wrap { position: relative; height: 280px; }
+.chart-fallback {
+    color: #94a3b8;
+    font-size: 12px;
+    padding: 30px;
+    text-align: center;
+    line-height: 1.6;
+}
+
+/* Unit cards */
+.unit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+.unit-card {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+.unit-name { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.unit-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #a5b4fc;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 4px;
+}
+.unit-value .unit { font-size: 12px; color: #94a3b8; font-weight: 500; }
+.unit-foot {
+    font-size: 11px;
+    color: #94a3b8;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Table */
+.table-wrap {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+    background: rgba(0,0,0,0.5);
+    color: #94a3b8;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+th.right, td.right { text-align: right; }
+td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: #e2e8f0;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+}
+.rank-dot { width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; }
+.hours-cell { font-variant-numeric: tabular-nums; font-weight: 700; color: #fff; }
+.unit-pill {
+    display: inline-block;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #cbd5e1;
+    margin-right: 4px;
+    margin-bottom: 2px;
+}
+
+/* Actions */
+.actions { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.action-btn {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #e2e8f0;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+.action-btn:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.15);
+}
+
+@media print {
+    .tabs, .actions { display: none !important; }
+    .pane { display: block !important; page-break-inside: avoid; }
+    .chart-grid { grid-template-columns: 1fr 1fr; }
+    body { background: #fff !important; color: #000 !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- BANNER -->
+<div class="banner">
+    <div class="banner-head">
+        <div style="flex: 1;">
+            <span class="banner-pill">KATESHİ</span>
+            <h1>Mesai yedek raporu</h1>
+        </div>
+        <div class="bot-badge">
+            <div class="bot-icon">🤖</div>
+            <div>
+                <div class="bot-name">KATESHİ BOTS</div>
+                <div class="bot-desc">Resmi mesai yedek çıktısı</div>
+                <div class="bot-footer">Kateshi tarafından oluşturuldu</div>
+            </div>
+        </div>
+    </div>
+    <p class="banner-desc">
+        Bu sayfa sıfırlama öncesi mesai verilerinin özetini, departman dağılımını ve kullanıcı satırlarını içerir.
+        Grafikler için internet bağlantısı gerekir.
+    </p>
+    <div class="meta" id="metaBar"></div>
+</div>
+
+<div class="actions">
+    <button class="action-btn" onclick="window.print()">🖨️ Yazdır</button>
+    <button class="action-btn" onclick="copySha()">📋 SHA-256'yı kopyala</button>
+</div>
+
+<div class="tabs">
+    <button class="tab active" data-tab="summary">Özet</button>
+    <button class="tab" data-tab="charts">Grafikler</button>
+    <button class="tab" data-tab="table">Kayıt tablosu</button>
+</div>
+
+<div id="panes"></div>
+
+</div>
+
+<!-- Chart.js: offline kullanılırsa yüklenmez, fallback metin gösterilir -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+
+<script>
+// ============================================================
+// VERİ — backend bu placeholder'ı gerçek JSON ile değiştirir
+// Test için inline örnek veri gömülüdür.
+// ============================================================
+const REPORT = (function () {
+    const raw = '{{REPORT_DATA_JSON}}';
+    if (raw && raw[0] === '{') {
+        try { return JSON.parse(raw); } catch (e) { console.error('Rapor JSON parse hatası:', e); }
+    }
+    // Placeholder eski haliyle kaldıysa örnek bir veriyle dön
+    return {
+        guild_name: 'Blaine County Sheriff Office',
+        guild_short: 'BCSO',
+        guild_id: '1361758514808230172',
+        actor_name: 'neo', actor_discord: '@neocxc', actor_id: '262611520909869056',
+        created_at: new Date().toISOString(),
+        total_minutes: 34810,
+        active_now_count: 0,
+        profile_matched_count: 24,
+        users_count: 26,
+        unit_summary: {
+            'Emergency Response': { total_hours: 95.2, active: 0, member_count: 4 },
+            'Criminal Investigation': { total_hours: 88.0, active: 0, member_count: 5 },
+            'Air Support': { total_hours: 45.5, active: 0, member_count: 2 },
+            'Operations': { total_hours: 132.4, active: 0, member_count: 6 },
+            'Narcotics Enforcement': { total_hours: 219.0, active: 0, member_count: 9 },
+        },
+        users: [
+            { name: 'Henry Black', callsign: '637', rank_name: 'Officer III', rank_color: '#fbbf24', units: ['Emergency Response'], total_minutes: 6493, is_active: false },
+            { name: 'Jamal West', callsign: '407', rank_name: 'Sergeant I', rank_color: '#f59e0b', units: ['Operations'], total_minutes: 5102, is_active: false },
+            { name: 'Marcus Walker', callsign: '406', rank_name: 'Sergeant II', rank_color: '#f59e0b', units: ['Narcotics Enforcement'], total_minutes: 4880, is_active: false },
+            { name: 'Adam Eddy', callsign: '545', rank_name: 'Corporal', rank_color: '#fbbf24', units: ['Criminal Investigation'], total_minutes: 3200, is_active: false },
+        ],
+        sha256: 'f98c4c5f5880040ee4956b388f1ab9e7155bf90e65a13c8b9265a4cec3894591',
+    };
+})();
+
+// ─── Yardımcılar ────────────────────────────────────────────
+function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleString('tr-TR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch { return d; } }
+function fmtHours(h) { if (h == null) return '0'; const hrs = Math.floor(h); const mins = Math.round((h - hrs) * 60); return hrs === 0 ? `${mins} dk` : `${hrs}sa ${mins}dk`; }
+
+// ─── Render — Banner meta ──────────────────────────────────
+function renderMeta() {
+    const r = REPORT;
+    const totalHours = (r.total_minutes || 0) / 60;
+    const totalUsers = r.users_count || (r.users ? r.users.length : 0);
+    document.getElementById('metaBar').innerHTML = `
+        <div class="meta-item">
+            <span class="label">Sunucu:</span>
+            <span class="value">${esc(r.guild_name)} ${r.guild_short ? `[${esc(r.guild_short)}]` : ''}</span>
+            ${r.guild_id ? `<span class="chip">${esc(r.guild_id)}</span>` : ''}
+        </div>
+        <div class="meta-item">
+            <span class="label">İşlemi yapan:</span>
+            <span class="value">${esc(r.actor_name || 'Sistem')} ${r.actor_discord ? `(${esc(r.actor_discord)})` : ''}</span>
+            ${r.actor_id ? `<span class="chip">${esc(r.actor_id)}</span>` : ''}
+        </div>
+        <div class="meta-item">
+            <span class="label">Oluşturulma:</span>
+            <span class="value">${fmtDate(r.created_at)}</span>
+        </div>
+        <div class="meta-item">
+            <span class="label">Kayıt:</span>
+            <span class="value">${totalUsers}</span>
+        </div>
+        <div class="meta-item">
+            <span class="label">Toplam:</span>
+            <span class="value">${totalHours.toFixed(2)} saat</span>
+        </div>
+    `;
+}
+
+// ─── Render — 3 Pane ───────────────────────────────────────
+function renderPanes() {
+    const r = REPORT;
+    const totalHours = (r.total_minutes || 0) / 60;
+    const totalUsers = r.users_count || (r.users ? r.users.length : 0);
+    const unitsCount = r.unit_summary ? Object.keys(r.unit_summary).length : 0;
+    const unitsOverHour = r.unit_summary
+        ? Object.values(r.unit_summary).filter(u => (u.total_hours || 0) >= 1).length
+        : 0;
+    
+    document.getElementById('panes').innerHTML = `
+        <!-- ÖZET -->
+        <div class="pane active" data-pane="summary">
+            <div class="stats">
+                <div class="stat">
+                    <div class="label">YEDEKLENEN KİŞİ</div>
+                    <div class="value">${totalUsers}</div>
+                    <div class="sub">Mesai verisi taşıyan satır</div>
+                </div>
+                <div class="stat">
+                    <div class="label">TOPLAM MESAİ</div>
+                    <div class="value">${totalHours.toFixed(2)}</div>
+                    <div class="sub">Saat (tablo toplamı)</div>
+                </div>
+                <div class="stat">
+                    <div class="label">MESAİDE (ANLIK)</div>
+                    <div class="value">${r.active_now_count || 0}</div>
+                    <div class="sub">Sıfırlama anında aktif</div>
+                </div>
+                <div class="stat">
+                    <div class="label">PROFİL EŞLEŞTİ</div>
+                    <div class="value">${r.profile_matched_count || 0}<span class="frac"> / ${totalUsers}</span></div>
+                    <div class="sub">Discord üye bilgisi</div>
+                </div>
+                <div class="stat">
+                    <div class="label">İŞLEM YAPILAN BİRİM</div>
+                    <div class="value">${unitsOverHour}<span class="frac"> / ${unitsCount}</span></div>
+                    <div class="sub">Toplam mesaisi 1 saati aşan birim sayısı</div>
+                </div>
+            </div>
+            
+            <div class="sha">
+                <div class="label">SHA-256 (BÜTÜNLÜK)</div>
+                <div class="hash" id="shaHash" title="Tıklayıp kopyalayabilirsin">${esc(r.sha256 || '— belirtilmemiş —')}</div>
+                <div class="desc">
+                    Dosya değiştiyse bu kod tutmaz. Doğrulama: bu 64 karakteri silin; kalan dosyanın UTF-8 SHA-256 özeti aynı olmalı.
+                </div>
+            </div>
+            
+            <div class="info-banner">
+                <strong>Grafikler:</strong> Birimlerdeki üyelerin toplam mesaisi ile o an mesaide sayıları. <strong>Atanmamış:</strong> hiçbir birimde kayıtlı olmayan kullanıcılar.
+            </div>
+            
+            ${unitsCount ? `
+                <div class="sec-head">
+                    <h2>🏢 Birim özetleri</h2>
+                    <span class="pill-count">${unitsCount} birim</span>
+                </div>
+                <div class="unit-grid">
+                    ${Object.entries(r.unit_summary)
+                        .map(([name, d]) => ({ name, hours: d.total_hours || 0, active: d.active || 0, members: d.member_count || 0 }))
+                        .sort((a, b) => b.hours - a.hours)
+                        .map(u => `
+                            <div class="unit-card">
+                                <div class="unit-name">${esc(u.name)}</div>
+                                <div class="unit-value">${u.hours.toFixed(1)}<span class="unit"> sa</span></div>
+                                <div class="unit-foot">
+                                    <span>${u.members} üye</span>
+                                    ${u.active > 0 ? `<span style="color:#4ade80;">● ${u.active} mesaide</span>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                </div>
+            ` : ''}
+        </div>
+        
+        <!-- GRAFİKLER -->
+        <div class="pane" data-pane="charts">
+            <div class="sec-head">
+                <h2>📊 Departman grafikleri</h2>
+                <span class="pill-count">${unitsCount} kategori</span>
+            </div>
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Departman — toplam mesai (saat)</div>
+                    <div class="chart-canvas-wrap" id="wrapBar"><canvas id="chBar"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Departman — dağılım (%)</div>
+                    <div class="chart-canvas-wrap" id="wrapPie"><canvas id="chPie"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Departman — aktif (mesaide) sayısı</div>
+                    <div class="chart-canvas-wrap" id="wrapActive"><canvas id="chActive"></canvas></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TABLO -->
+        <div class="pane" data-pane="table">
+            <div class="sec-head">
+                <h2>👥 Kullanıcı kayıtları</h2>
+                <span class="pill-count">${totalUsers} kayıt</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Personel</th>
+                            <th>Rütbe</th>
+                            <th>Birimler</th>
+                            <th class="right">Mesai</th>
+                            <th class="right">Mesaide?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(r.users || []).map(u => `
+                            <tr>
+                                <td>
+                                    <div style="font-weight:700; color:#fff;">${esc(u.name || 'Bilinmeyen')}</div>
+                                    ${u.callsign ? `<div style="font-size:11px; color:#94a3b8;">#${esc(u.callsign)}</div>` : ''}
+                                </td>
+                                <td>${u.rank_name ? `<span class="rank-badge"><span class="rank-dot" style="background:${esc(u.rank_color || '#94a3b8')};"></span>${esc(u.rank_name)}</span>` : '<span style="color:#94a3b8; font-size:12px;">—</span>'}</td>
+                                <td>${(u.units || []).map(un => `<span class="unit-pill">${esc(un)}</span>`).join('') || '<span style="color:#94a3b8; font-size:12px;">—</span>'}</td>
+                                <td class="right hours-cell">${fmtHours((u.total_minutes || 0) / 60)}</td>
+                                <td class="right">${u.is_active
+                                    ? '<span style="color:#4ade80; font-size:16px;" title="Mesaide">●</span>'
+                                    : '<span style="color:#94a3b8; font-size:16px;" title="Çevrimdışı">○</span>'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// ─── Tab geçiş ─────────────────────────────────────────────
+document.addEventListener('click', e => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.pane[data-pane="${tab.dataset.tab}"]`).classList.add('active');
+    if (tab.dataset.tab === 'charts') drawCharts();
+});
+
+// ─── Chart çizim (lazy) ────────────────────────────────────
+let chartsDrawn = false;
+function drawCharts() {
+    if (chartsDrawn) return;
+    const units = REPORT.unit_summary
+        ? Object.entries(REPORT.unit_summary).map(([n,d]) => ({ name: n, hours: d.total_hours||0, active: d.active||0, members: d.member_count||0 })).sort((a,b)=>b.hours-a.hours)
+        : [];
+    
+    if (!units.length) {
+        ['wrapBar','wrapPie','wrapActive'].forEach(id => {
+            document.getElementById(id).innerHTML = '<div class="chart-fallback">Görüntülenecek veri yok</div>';
+        });
+        chartsDrawn = true;
+        return;
+    }
+    
+    // Chart.js yüklenmemişse fallback
+    if (typeof Chart === 'undefined') {
+        ['wrapBar','wrapPie','wrapActive'].forEach(id => {
+            document.getElementById(id).innerHTML = `
+                <div class="chart-fallback">
+                    Grafik kütüphanesi yüklenemedi (offline mod).<br>
+                    <small>Veriler "Kayıt tablosu" sekmesinde görünür.</small>
+                </div>`;
+        });
+        chartsDrawn = true;
+        return;
+    }
+    
+    const colors = ['#a855f7', '#3b82f6', '#f59e0b', '#ef4444', '#22c55e', '#06b6d4', '#ec4899', '#84cc16', '#eab308', '#94a3b8'];
+    const labels = units.map(u => u.name);
+    
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = 'inherit';
+    
+    new Chart(document.getElementById('chBar'), {
+        type: 'bar',
+        data: { labels, datasets: [{ data: units.map(u=>u.hours), backgroundColor: units.map((_,i)=>colors[i%colors.length]+'b0'), borderColor: units.map((_,i)=>colors[i%colors.length]), borderWidth: 1.5, borderRadius: 4 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'rgba(0,0,0,0.85)', cornerRadius:6, callbacks: { label: ctx => `${ctx.formattedValue} saat` } } }, scales:{ y:{ ticks:{callback:v=>v+' sa'}, grid:{color:'rgba(255,255,255,0.04)'}}, x:{ ticks:{font:{size:10}, maxRotation:45}, grid:{display:false} } } },
+    });
+    
+    new Chart(document.getElementById('chPie'), {
+        type: 'doughnut',
+        data: { labels, datasets:[{ data: units.map(u=>u.hours), backgroundColor: units.map((_,i)=>colors[i%colors.length]), borderColor:'rgba(0,0,0,0.4)', borderWidth:2, hoverOffset:8 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{position:'bottom', labels:{boxWidth:10, padding:8, font:{size:10}, color:'#aaa'}}, tooltip:{ backgroundColor:'rgba(0,0,0,0.85)', cornerRadius:6, callbacks:{ label: ctx => { const total = units.reduce((s,u)=>s+u.hours,0); const pct = total>0?((ctx.parsed/total)*100).toFixed(1):0; return `${ctx.label}: ${ctx.formattedValue} sa (%${pct})`; } } } } },
+    });
+    
+    new Chart(document.getElementById('chActive'), {
+        type: 'bar',
+        data: { labels, datasets: [
+            { label: 'Toplam üye', data: units.map(u=>u.members), backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 4 },
+            { label: 'Mesaide',    data: units.map(u=>u.active),  backgroundColor: '#22c55e', borderRadius: 4 },
+        ]},
+        options: { responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{ legend:{position:'top', labels:{color:'#aaa', boxWidth:12, font:{size:10}}}, tooltip:{backgroundColor:'rgba(0,0,0,0.85)', cornerRadius:6}}, scales:{ x:{beginAtZero:true, ticks:{precision:0}, grid:{color:'rgba(255,255,255,0.04)'}}, y:{ grid:{display:false}, ticks:{font:{size:10}} } } },
+    });
+    
+    chartsDrawn = true;
+}
+
+function copySha() {
+    const t = (REPORT.sha256 || '').trim();
+    if (!t) return;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(t).then(() => alert('SHA-256 panoya kopyalandı.'));
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = t; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); alert('SHA-256 panoya kopyalandı.'); } catch {}
+        ta.remove();
+    }
+}
+
+renderMeta();
+renderPanes();
+</script>
+</body>
+</html>

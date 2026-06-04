@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd \"c:\\\\Users\\\\Administrator\\\\Desktop\\\\mrpd-backend\"; $proc = Start-Process node -ArgumentList \"server.js\" -PassThru -RedirectStandardOutput \"server_out.txt\" -RedirectStandardError \"server_err.txt\"; Start-Sleep -Seconds 3; Get-Content server_out.txt; Get-Content server_err.txt; $proc.Id)",
+      "PowerShell(pm2 restart mrpd-backend)",
+      "PowerShell(pm2 list)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "Read(//c/Users/Administrator/Desktop/mrpd-fronted/public/**)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\BOT\" -File -Recurse -Exclude \"node_modules\" | Where-Object { $_.FullName -notmatch \"node_modules\" } | Select-Object FullName)",
+      "Read(//c/Users/Administrator/Desktop/BOT/**)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Administrator\\\\Desktop\" -Recurse -File | Where-Object { $_.FullName -notmatch \"node_modules\" -and $_.Extension -eq \".js\" } | Select-Object FullName)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\BOT\\\\index.js\"\\).Length)",
+      "Read(//c/Users/Administrator/Downloads/Bot/BOT/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Administrator\\Desktop\\mrpd-fronted\\public\\js"
+    ]
+  }
+}

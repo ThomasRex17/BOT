@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Kadro · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+.kadro-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 60px;
+}
+.kadro-header { text-align: center; padding: 20px 0 30px; }
+.kadro-header h1 { font-size: 26px; color: #fff; margin: 0 0 8px; font-weight: 700; }
+.kadro-header p { color: var(--text-mute); font-size: 14px; margin: 0; }
+
+.rank-group { margin-bottom: 18px; }
+
+.rank-bar {
+    background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4));
+    border: 1px solid var(--rank-color, #FFC700);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+}
+.rank-bar::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--rank-color, #FFC700) 0%, transparent 30%);
+    opacity: 0.08;
+    pointer-events: none;
+}
+.rank-bar:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(0,0,0,0.4); }
+
+.rank-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--rank-color, #FFC700), color-mix(in srgb, var(--rank-color, #FFC700) 70%, black));
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 18px; color: #000; font-weight: 900;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--rank-color, #FFC700) 50%, transparent);
+    flex-shrink: 0; z-index: 1;
+}
+
+.rank-info { flex: 1; z-index: 1; }
+.rank-name { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 2px; letter-spacing: 0.3px; }
+.rank-desc { font-size: 11px; color: var(--text-mute); }
+
+.rank-count {
+    background: var(--rank-color, #FFC700);
+    color: #000;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 800; z-index: 1;
+}
+
+.rank-toggle { color: var(--rank-color, #FFC700); font-size: 14px; transition: transform 0.2s; z-index: 1; }
+.rank-group.collapsed .rank-toggle { transform: rotate(180deg); }
+
+.personnel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    padding: 16px 8px 4px;
+    transition: all 0.2s;
+}
+.rank-group.collapsed .personnel-grid { display: none; }
+
+.person-card {
+    background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.6));
+    border: 1px solid var(--border, rgba(255,255,255,0.08));
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+    transition: all 0.15s;
+    position: relative;
+    cursor: pointer;
+}
+.person-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--rank-color, #FFC700);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+}
+
+.person-photo {
+    width: 130px; height: 130px;
+    margin: 0 auto 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #2a2a3e, #1a1a2e);
+    display: grid; place-items: center;
+    position: relative;
+    border: 1px solid var(--border, rgba(255,255,255,0.08));
+}
+.person-photo img { width: 100%; height: 100%; object-fit: cover; }
+.person-photo .fallback { color: #fff; font-weight: 700; font-size: 32px; letter-spacing: 1px; }
+.person-photo .duty-dot {
+    position: absolute; bottom: 6px; right: 6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #3b82f6;
+    border: 2px solid #1a1a2e;
+}
+.person-photo .duty-dot.on { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+
+.person-name {
+    font-size: 14px; font-weight: 700; color: #fff;
+    margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.person-callsign {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--rank-color, #FFC700); color: #000;
+    padding: 4px 11px; border-radius: 999px;
+    font-size: 11px; font-weight: 800;
+    margin-bottom: 10px;
+}
+.person-callsign::before { content: '✦'; font-size: 9px; }
+
+.person-badges {
+    display: flex; justify-content: center; gap: 4px;
+    flex-wrap: wrap; min-height: 24px;
+}
+.person-badge-icon {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    background: linear-gradient(135deg, var(--badge-color, #FFC700), color-mix(in srgb, var(--badge-color, #FFC700) 60%, black));
+    display: grid; place-items: center;
+    font-size: 11px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.empty-rank {
+    text-align: center; padding: 30px;
+    color: var(--text-mute); font-size: 12px;
+    background: rgba(0,0,0,0.2);
+    border: 1px dashed var(--border, rgba(255,255,255,0.1));
+    border-radius: 10px;
+    margin: 14px 8px;
+}
+
+.global-loading { padding: 80px; text-align: center; color: var(--text-mute); }
+.spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: var(--primary, #6366f1);
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: kadroSpin 0.8s linear infinite;
+}
+@keyframes kadroSpin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="navContainer"></div>
+
+<div class="kadro-wrap">
+    <div class="kadro-header">
+        <h1>Aktif Personel Listesi</h1>
+        <p id="totalCount">Yükleniyor...</p>
+    </div>
+
+    <div id="kadroContainer">
+        <!-- İlk yükleme: spinner yerine shimmer skeleton kartları -->
+        <div class="p1-skeleton-grid">
+            <div class="p1-skeleton-card">
+                <div class="p1-skel-photo"></div>
+                <div class="p1-skel-line w-70"></div>
+                <div class="p1-skel-line w-40"></div>
+            </div>
+            <div class="p1-skeleton-card">
+                <div class="p1-skel-photo"></div>
+                <div class="p1-skel-line w-70"></div>
+                <div class="p1-skel-line w-50"></div>
+            </div>
+            <div class="p1-skeleton-card">
+                <div class="p1-skel-photo"></div>
+                <div class="p1-skel-line w-70"></div>
+                <div class="p1-skel-line w-40"></div>
+            </div>
+            <div class="p1-skeleton-card">
+                <div class="p1-skel-photo"></div>
+                <div class="p1-skel-line w-70"></div>
+                <div class="p1-skel-line w-50"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/pub-nav.js"></script>
+<script>
+// Public sayfa: giriş yapma zorunluluğu YOK.
+document.getElementById('navContainer').innerHTML = renderPubNav('roster');
+
+// URL'den arama terimi (?search=X) — varsa kutuya yaz, listede filtrele
+const _kadroParams = new URLSearchParams(window.location.search);
+const SEARCH_TERM = (_kadroParams.get('search') || '').trim().toLowerCase();
+if (SEARCH_TERM) {
+    const inp = document.getElementById('globalSearch');
+    if (inp) inp.value = _kadroParams.get('search');
+}
+
+const RANK_CONFIG = [
+    { match: ['Captain'], icon: '✪', desc: 'Departman Şefi', color: '#FFC700' },
+    { match: ['Lieutenant'], icon: '◆', desc: 'Departman Sorumlusu', color: '#FFC700' },
+    { match: ['Sergeant'], icon: '⌘', desc: 'Saha Komutanı', color: '#F59E0B' },
+    // ─── Acting Supervisor: Sergeant ile Master Officer arasında, vekil amir ───
+    { match: ['Acting Supervisor', 'Acting Sergeant', 'Vekil Amir'], icon: '◐', desc: 'Vekil Amir (Acting Supervisor)', color: '#F59E0B' },
+    { match: ['Master Deputy Sheriff', 'Master Officer'], icon: '★', desc: 'Veteran Memur', color: '#F59E0B' },
+    { match: ['Senior Deputy Sheriff', 'Senior Officer'], icon: '★', desc: 'Kıdemli Memur', color: '#F59E0B' },
+    { match: ['Officer III + 1', 'Officer 3 + 1', 'Officer III+1'], icon: '✦', desc: 'Memur III + 1', color: '#FBBF24' },
+    { match: ['Deputy Sheriff', 'Officer III', 'Officer 3'], icon: '✦', desc: 'Memur III', color: '#FBBF24' },
+    { match: ['Officer II', 'Officer 2 + 1', 'Officer 2'], icon: '✦', desc: 'Memur II', color: '#FBBF24' },
+    { match: ['Officer I', 'Officer 1', 'Officer'], icon: '✦', desc: 'Memur', color: '#FBBF24' },
+    { match: ['Cadet', 'Aday'], icon: '◇', desc: 'Aday Memur', color: '#94a3b8' },
+];
+
+function escapeHTML(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function getName(p) {
+    let name = cleanName(String(p.ic_name || p.name || `#${p.id || '?'}`));
+    name = name.replace(/\[\d+\]/g, '').replace(/\[[Mm]\]/g, '').replace(/\s+/g, ' ').trim();
+    return name || `#${p.id || '?'}`;
+}
+function getInitials(name) {
+    const parts = String(name).trim().split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map(p => p[0]?.toUpperCase()).join('') || '?';
+}
+function getPhoto(p) {
+    return p.photo_url || p.photoUrl || p.avatar_url || p.avatarUrl || p.image_url || p.imageUrl || p.photo || p.avatar || null;
+}
+function getCallsign(p) {
+    return String(p.callsign || p.call_sign || p.badge_number || p.id || '');
+}
+function getRankConfig(rankName) {
+    if (!rankName) return RANK_CONFIG[RANK_CONFIG.length - 1];
+    const lower = String(rankName).toLowerCase();
+    for (const cfg of RANK_CONFIG) {
+        for (const m of cfg.match) {
+            if (lower.includes(m.toLowerCase())) return cfg;
+        }
+    }
+    return RANK_CONFIG[RANK_CONFIG.length - 1];
+}
+function isOnDuty(p) {
+    return p.isOnDuty || p.is_on_duty || p.onDuty || p.on_duty || p.duty === true;
+}
+function getBadges(p) { return p.badges || p.medals || p.rozetler || []; }
+
+function renderPersonCard(p, rankColor) {
+    const name = getName(p);
+    const photo = getPhoto(p);
+    const callsign = getCallsign(p);
+    const onDuty = isOnDuty(p);
+    const badges = getBadges(p);
+
+    return `
+        <div class="person-card" style="--rank-color: ${rankColor};" onclick="openPersonDetail(${p.id || 'null'})">
+            <div class="person-photo">
+                ${photo
+                    ? `<img src="${escapeHTML(photo)}" onerror="this.outerHTML='<div class=&quot;fallback&quot;>${getInitials(name)}</div>'" alt="${escapeHTML(name)}">`
+                    : `<div class="fallback">${getInitials(name)}</div>`}
+                <div class="duty-dot ${onDuty ? 'on' : ''}" title="${onDuty ? 'Mesaide' : 'Çevrimdışı'}"></div>
+            </div>
+            <div class="person-name" title="${escapeHTML(name)}">${escapeHTML(name)}</div>
+            ${callsign ? `<div class="person-callsign">${escapeHTML(callsign)}</div>` : ''}
+            <div class="person-badges">
+                ${badges.slice(0, 5).map(b => `
+                    <div class="person-badge-icon"
+                         style="--badge-color: ${b.color || '#FFC700'};"
+                         title="${escapeHTML(b.name || '')}">${b.icon || '★'}</div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function openPersonDetail(id) {
+    if (!id) return;
+    window.location.href = `/profile.html?id=${id}`;
+}
+
+async function loadKadro() {
+    try {
+        // Public endpoint — auth gerekmez (home.html'in kullandığıyla aynı).
+        const json = await fetchPublic('/personnel/public');
+        let allPpl = json?.data || json?.personnel || [];
+        if (!Array.isArray(allPpl)) allPpl = [];
+
+        // ?search=X varsa: isim / callsign / rütbe / id üzerinde filtre uygula
+        let filtered = allPpl;
+        if (SEARCH_TERM) {
+            filtered = allPpl.filter(p => {
+                const hay = [
+                    getName(p),
+                    getCallsign(p),
+                    p.rank_name || p.rankName || p.rank || '',
+                    String(p.id || ''),
+                    p.discord_username || '',
+                ].join(' ').toLowerCase();
+                return hay.includes(SEARCH_TERM);
+            });
+        }
+
+        document.getElementById('totalCount').textContent = SEARCH_TERM
+            ? `"${_kadroParams.get('search')}" için ${filtered.length} sonuç (${allPpl.length} personel arasında)`
+            : (filtered.length ? `Toplam ${filtered.length} aktif personel` : 'Henüz personel kaydı yok');
+
+        const allPplForGroups = filtered;
+
+        const groups = new Map();
+        for (const p of allPplForGroups) {
+            const rank = p.rank_name || p.rankName || p.rank || 'Diğer';
+            if (!groups.has(rank)) groups.set(rank, []);
+            groups.get(rank).push(p);
+        }
+
+        const sortedGroups = [];
+        const usedRanks = new Set();
+        for (const cfg of RANK_CONFIG) {
+            for (const [rankName, members] of groups) {
+                if (usedRanks.has(rankName)) continue;
+                const lower = rankName.toLowerCase();
+                if (cfg.match.some(m => lower.includes(m.toLowerCase()))) {
+                    sortedGroups.push({ rankName, members, config: cfg });
+                    usedRanks.add(rankName);
+                }
+            }
+        }
+        for (const [rankName, members] of groups) {
+            if (!usedRanks.has(rankName)) {
+                sortedGroups.push({ rankName, members, config: getRankConfig(rankName) });
+            }
+        }
+
+        const c = document.getElementById('kadroContainer');
+        if (!sortedGroups.length) {
+            c.innerHTML = SEARCH_TERM
+                ? `<div class="empty-rank">🔍 "${escapeHTML(_kadroParams.get('search'))}" için sonuç bulunamadı. <a href="/kadro.html" style="color:var(--primary-light);">Tüm kadroyu göster</a></div>`
+                : `<div class="empty-rank">Henüz personel yok</div>`;
+            return;
+        }
+
+        c.innerHTML = sortedGroups.map(({ rankName, members, config }, idx) => `
+            <div class="rank-group" data-idx="${idx}">
+                <div class="rank-bar" style="--rank-color: ${config.color};" onclick="toggleRank(${idx})">
+                    <div class="rank-icon">${config.icon}</div>
+                    <div class="rank-info">
+                        <div class="rank-name">${escapeHTML(rankName)}</div>
+                        <div class="rank-desc">${escapeHTML(config.desc)}</div>
+                    </div>
+                    <span class="rank-count">${members.length} Personel</span>
+                    <span class="rank-toggle">▲</span>
+                </div>
+                <div class="personnel-grid">
+                    ${members.map(p => renderPersonCard(p, config.color)).join('')}
+                </div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        document.getElementById('kadroContainer').innerHTML =
+            `<div class="empty-rank">⚠️ Veriler yüklenemedi: ${escapeHTML(err.message)}</div>`;
+    }
+}
+
+function toggleRank(idx) {
+    const el = document.querySelector(`.rank-group[data-idx="${idx}"]`);
+    if (el) el.classList.toggle('collapsed');
+}
+
+loadKadro();
+</script>
+</body>
+</html>

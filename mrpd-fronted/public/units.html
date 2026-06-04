@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Aktif Birimler · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>Aktif Birimler</h1>
+            <p id="totalCount">Saha operasyonları ve aktif birim takibi</p>
+        </div>
+        
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-icon green">🚓</div>
+                <div class="stat-content">
+                    <div class="label">Aktif Birim</div>
+                    <div class="value" id="statActive">—</div>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon orange">👥</div>
+                <div class="stat-content">
+                    <div class="label">Sahada Memur</div>
+                    <div class="value" id="statOnField">—</div>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon purple">📡</div>
+                <div class="stat-content">
+                    <div class="label">Birim Tipi</div>
+                    <div class="value" id="statTypes">—</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-card-head">
+                <div class="table-card-title">📡 Aktif Birim Listesi</div>
+                <button class="btn btn-primary" onclick="openCreateModal()">+ Yeni Birim Aç</button>
+            </div>
+            <div id="loadingDiv" class="loading"><div class="spinner"></div></div>
+            <div id="unitsContainer" style="display: none; padding: 14px;"></div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.require(PERM.PAGE_UNITS)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('units');
+
+let allPersonnel = [];
+
+async function loadPersonnelList() {
+    try {
+        const res = await api.get('/personnel?limit=200');
+        allPersonnel = res.data.items;
+    } catch {}
+}
+
+async function loadUnits() {
+    document.getElementById('loadingDiv').style.display = 'block';
+    document.getElementById('unitsContainer').style.display = 'none';
+    
+    try {
+        // Aktif mesai = sahada
+        const dutyRes = await api.get('/duty/active');
+        const onField = dutyRes.data;
+        document.getElementById('statOnField').textContent = onField.length;
+        
+        // Birimler bot'tan: aktif_birimler.json (geçici olarak boş)
+        const activeUnits = []; // gelecek mesajda bot ile sync
+        
+        document.getElementById('statActive').textContent = activeUnits.length;
+        document.getElementById('statTypes').textContent = new Set(activeUnits.map(u => u.kod)).size;
+        
+        const c = document.getElementById('unitsContainer');
+        
+        if (!activeUnits.length && !onField.length) {
+            c.innerHTML = `
+                <div class="empty">
+                    <div class="empty-icon">📡</div>
+                    <div style="margin-bottom: 8px;">Şu anda saha operasyonu yok</div>
+                    <p style="font-size: 12px; color: var(--text-mute);">Memurlar mesaiye girince burada görünür</p>
+                </div>
+            `;
+        } else {
+            // Sahada olan memurları "tek kişilik birim" olarak göster
+            c.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+                    ${onField.map(p => `
+                        <div style="background: var(--bg-3); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="av av-sm" style="background: linear-gradient(135deg, #22c55e, #16a34a);">${(cleanName(p.ic_name) || '?')[0].toUpperCase()}</div>
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600; color: #fff;">
+                                            ${p.callsign ? `<span style="color: ${p.rank_color};">[${p.callsign}]</span> ` : ''}
+                                            ${escapeHtml(cleanName(p.ic_name))}
+                                        </div>
+                                        <div style="font-size: 10px; color: var(--text-mute);">${p.rank_name || '—'}</div>
+                                    </div>
+                                </div>
+                                <span class="pill pill-success">● MESAİDE</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-mute); padding-top: 10px; border-top: 1px solid var(--border);">
+                                ⏱️ ${formatDuration(p.elapsed_minutes)} · Başladı: ${formatDateTime(p.started_at).split(',')[1]}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        document.getElementById('loadingDiv').style.display = 'none';
+        c.style.display = 'block';
+    } catch (err) {
+        document.getElementById('loadingDiv').innerHTML = `<div class="empty">${err.message}</div>`;
+    }
+}
+
+function openCreateModal() {
+    showModal({
+        title: 'Birim Aç',
+        body: `
+            <p style="color: var(--text-mute); padding: 30px; text-align: center;">
+                Birim açma özelliği bot üzerinden yapılır.<br>
+                Discord'da <code style="background: var(--bg-3); padding: 2px 8px; border-radius: 4px;">/birim-ac</code> komutunu kullan.
+            </p>
+        `,
+        buttons: [
+            { id: 'close', label: 'Kapat', class: 'btn-ghost', onClick: closeModal },
+        ],
+    });
+}
+
+(async () => { await loadPersonnelList(); loadUnits(); })();
+setInterval(() => { if (!document.getElementById('modal-bd')) loadUnits(); }, 15000);
+</script>
+</body>
+</html>

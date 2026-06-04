@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>💰 Prim Bordrosu · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+.income-card { background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(34,197,94,0.06)); border: 1px solid rgba(99,102,241,0.3); border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+.income-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; align-items: end; }
+@media (max-width: 800px) { .income-grid { grid-template-columns: 1fr; } }
+.in-label { font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; display: block; }
+.income-input-wrap { position: relative; }
+.income-input { width: 100%; padding: 14px 16px 14px 42px; background: var(--bg-1); border: 2px solid #22c55e; border-radius: 10px; color: #86efac; font-size: 22px; font-weight: 800; box-sizing: border-box; }
+.income-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+.income-cur { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #86efac; font-size: 20px; font-weight: 800; pointer-events: none; }
+.period-input { padding: 14px 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 14px; width: 100%; box-sizing: border-box; }
+.bd-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 14px; }
+.bd-card { background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.bd-card.salary { border-color: rgba(99,102,241,0.4); }
+.bd-card.pool { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.05); }
+.bd-card.fto { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.05); }
+.bd-card.officer { border-color: rgba(168,85,247,0.4); background: rgba(168,85,247,0.05); }
+.bd-card.night { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.05); }
+.bd-label { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+.bd-value { font-size: 17px; font-weight: 800; color: #fff; line-height: 1.15; }
+.bd-meta { font-size: 10px; color: var(--text-mute); margin-top: 3px; }
+.bd-card.salary .bd-value { color: #a5b4fc; }
+.bd-card.pool .bd-value { color: #86efac; }
+.bd-card.fto .bd-value { color: #fcd34d; }
+.bd-card.officer .bd-value { color: #d8b4fe; }
+.bd-card.night .bd-value { color: #93c5fd; }
+.awards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+@media (max-width: 800px) { .awards-row { grid-template-columns: 1fr; } }
+.award-card { background: rgba(0,0,0,0.45); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; }
+.award-card.has-award.fto { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.06); }
+.award-card.has-award.officer { border-color: rgba(168,85,247,0.4); background: rgba(168,85,247,0.06); }
+.award-icon { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+.award-card.fto .award-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.award-card.officer .award-icon { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+.award-info { flex: 1; min-width: 0; }
+.award-title { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 4px; font-weight: 700; }
+.award-select { padding: 8px 10px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 7px; color: #fff; font-size: 12px; width: 100%; }
+.award-amount { font-size: 12px; color: #86efac; font-weight: 700; margin-top: 4px; }
+.pay-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 14px; }
+.btn-pri { padding: 8px 14px; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.btn-pri:hover { filter: brightness(1.1); }
+.btn-sec { padding: 8px 14px; background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 12px; }
+.btn-sec:hover { background: var(--primary-soft); color: #fff; }
+.pay-card { background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.pay-card-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pay-card-title { font-size: 14px; font-weight: 700; color: #fff; }
+.pay-search { padding: 7px 12px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 7px; color: #fff; font-size: 12px; min-width: 220px; }
+.pay-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pay-table thead th { background: var(--bg-1); text-align: left; padding: 10px 14px; color: var(--text-mute); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.pay-table tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #ddd; vertical-align: middle; }
+.pay-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.pay-table tbody tr.is-fto { background: linear-gradient(90deg, rgba(245,158,11,0.06), transparent); }
+.pay-table tbody tr.is-officer { background: linear-gradient(90deg, rgba(168,85,247,0.06), transparent); }
+.pay-table tbody tr.is-fto:hover, .pay-table tbody tr.is-officer:hover { background: rgba(255,255,255,0.05); }
+.row-name { display: flex; align-items: center; gap: 10px; }
+.row-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 10px; flex-shrink: 0; }
+.row-name-text { font-weight: 600; color: #fff; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.role-tag { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
+.role-tag.fto { background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
+.role-tag.officer { background: rgba(168,85,247,0.2); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.4); }
+.row-meta { color: var(--text-mute); font-size: 10px; }
+.row-input { width: 75px; padding: 5px 8px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 6px; color: #fff; font-size: 12px; text-align: right; }
+.row-input.night { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.05); }
+.row-input:focus { outline: none; border-color: var(--primary); }
+.cell-amount { font-weight: 700; }
+.cell-amount.salary { color: #a5b4fc; }
+.cell-amount.night { color: #93c5fd; }
+.cell-amount.bonus { color: #fcd34d; }
+.cell-total { font-weight: 800; color: #86efac; font-size: 13px; }
+.empty-row { padding: 36px; text-align: center; color: var(--text-mute); }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 9999; display: grid; place-items: center; padding: 20px; }
+.modal-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; max-width: 600px; width: 100%; max-height: 90vh; overflow: auto; }
+.modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-body { padding: 20px; display: grid; gap: 12px; }
+.modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+.cfg-section-head { color: #fff; font-size: 12px; font-weight: 700; padding: 8px 0 4px; border-bottom: 1px solid var(--border); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.7px; }
+.cfg-row { display: grid; grid-template-columns: 1fr 130px; gap: 12px; align-items: center; padding: 7px 0; }
+.cfg-row label { font-size: 12px; color: var(--text-dim); }
+.cfg-row label small { display: block; color: var(--text-mute); font-size: 10px; margin-top: 1px; }
+.cfg-row input { padding: 7px 10px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 6px; color: #fff; text-align: right; font-size: 13px; }
+.detail-grid { padding: 14px 18px; background: var(--bg-1); border-radius: 8px; margin: 0 0 12px; }
+.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 12px; border-bottom: 1px dashed rgba(255,255,255,0.05); }
+.detail-row:last-child { border-bottom: none; }
+.detail-row .lbl { color: var(--text-mute); }
+.detail-row .val { color: #fff; font-weight: 600; }
+.detail-row .val.add { color: #86efac; }
+.detail-total { padding: 12px 18px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.detail-total .lbl { color: #fff; font-weight: 700; }
+.detail-total .val { color: #86efac; font-weight: 800; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>💰 Prim Bordrosu</h1>
+            <p>Haftalık gelir → 7/8 rütbe maaşları + 1/8 prim havuzu (FTO + Memur + Night Shift)</p>
+        </div>
+        
+        <div class="income-card">
+            <div class="income-grid">
+                <div>
+                    <span class="in-label">💵 Bu Haftaki Toplam Gelir</span>
+                    <div class="income-input-wrap">
+                        <span class="income-cur">$</span>
+                        <input id="incomeInput" type="number" min="0" step="10000" value="800000" class="income-input" oninput="onIncomeChange()">
+                    </div>
+                </div>
+                <div>
+                    <span class="in-label">📅 Hafta</span>
+                    <select id="weekSel" class="period-input" onchange="loadPayroll()"></select>
+                </div>
+            </div>
+            <div class="bd-row" id="breakdown"></div>
+        </div>
+        
+        <div class="awards-row">
+            <div class="award-card fto" id="ftoCard">
+                <div class="award-icon">🎓</div>
+                <div class="award-info">
+                    <div class="award-title">★ Haftanın FTO'su (%10)</div>
+                    <select id="ftoSel" class="award-select" onchange="onAwardChange()"><option value="">— Seç —</option></select>
+                    <div class="award-amount" id="ftoAmount">$0</div>
+                </div>
+            </div>
+            <div class="award-card officer" id="officerCard">
+                <div class="award-icon">🏆</div>
+                <div class="award-info">
+                    <div class="award-title">★ Haftanın Memuru (%15)</div>
+                    <select id="officerSel" class="award-select" onchange="onAwardChange()"><option value="">— Seç —</option></select>
+                    <div class="award-amount" id="officerAmount">$0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="pay-toolbar">
+            <span style="font-size:11px; color:var(--text-mute); font-weight:700; text-transform:uppercase; letter-spacing:1px;">İşlemler:</span>
+            <button class="btn-sec" onclick="autoFillFromDuty()">⚡ DB'den Night Saatlerini Doldur</button>
+            <button class="btn-sec" onclick="reloadPersonnel()" title="Aktif mesaideleri yenile">🔄 Mesaideleri Yenile</button>
+<span id="dutyCountBadge" style="padding:5px 10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:#86efac; border-radius:999px; font-size:11px; font-weight:700;">— mesaide</span>
+            <button class="btn-sec" onclick="resetWeek()">🗑 Haftayı Sıfırla</button>
+            <div style="flex:1;"></div>
+            <button class="btn-sec" onclick="openConfig()">⚙️ Ayarlar</button>
+            <button class="btn-pri" onclick="exportCSV()">📊 CSV Aktar</button>
+        </div>
+        
+        <div class="pay-card">
+            <div class="pay-card-head">
+                <div class="pay-card-title" id="weekTitle">—</div>
+                <input id="searchInput" type="text" class="pay-search" placeholder="🔍 Ara...">
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="pay-table">
+                    <thead>
+                        <tr>
+                            <th>Personel</th>
+                            <th>🎖️ Rütbe Maaşı</th>
+                            <th>🌙 Night (sa)</th>
+                            <th>🌙 Night Primi</th>
+                            <th>🏆 Hafta Ödülü</th>
+                            <th style="text-align:right;">Toplam</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="payTbody"><tr><td colspan="7" class="empty-row"><div class="spinner"></div></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* staff değil */ }
+        if (!Perms.require(PERM.PAGE_PAYROLL)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('payroll');
+
+// ─── KONFIG (v4 — eski cache otomatik silinir) ───
+const CFG_KEY = 'mrpd_payroll_cfg_v4';
+const DATA_KEY = 'mrpd_payroll_data_v3';
+
+// Eski v3 cache'i temizle (rütbe ağırlıkları yenilensin diye)
+localStorage.removeItem('mrpd_payroll_cfg_v3');
+
+const DEFAULT_CFG = {
+    currency: '$',
+    salaryRatio: 7/8,
+    poolRatio: 1/8,
+    ftoPercent: 10,
+    officerPercent: 15,
+    roundTo: 5000,
+    rankWeight: {
+        // Roman ve Arabic ikisini de tanır — normalizeRank çevirir
+        'Captain': 28,
+        'Lieutenant 2': 18,
+        'Lieutenant 1': 18,
+        'Sergeant 2': 16,
+        'Sergeant 1': 16,
+        'Detective': 14,
+        'Officer 3+1': 14,
+        'Officer 3': 12,
+        'Officer 2': 11,
+        'Officer 1': 9,
+        'Cadet': 5,
+    },
+};
+
+function loadCfg() {
+    try { return { ...DEFAULT_CFG, ...(JSON.parse(localStorage.getItem(CFG_KEY) || '{}')) }; }
+    catch { return { ...DEFAULT_CFG }; }
+}
+function saveCfg(c) { localStorage.setItem(CFG_KEY, JSON.stringify(c)); }
+
+let cfg = loadCfg();
+let allPersonnel = [];
+let weekData = {};
+let currentWeek = '';
+
+function loadWeekData() {
+    try { weekData = JSON.parse(localStorage.getItem(DATA_KEY) || '{}'); }
+    catch { weekData = {}; }
+}
+function saveWeekData() { localStorage.setItem(DATA_KEY, JSON.stringify(weekData)); }
+
+// ─── HELPERS ───
+function escapeHTML(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function getName(p) {
+    let n = cleanName(String(p.ic_name || p.name || `#${p.id || '?'}`));
+    return n.replace(/\[\d+\]/g, '').replace(/\[[Mm]\]/g, '').replace(/\s+/g, ' ').trim() || `#${p.id || '?'}`;
+}
+function getInitials(n) { return String(n).split(/\s+/).filter(Boolean).slice(0,2).map(p => p[0]?.toUpperCase()).join('') || '?'; }
+function getRank(p) { return p.rank_name || p.rankName || p.rank || ''; }
+function getCallsign(p) { return String(p.callsign || p.id || ''); }
+function fmt(n, round = true) {
+    let val = n || 0;
+    if (round && cfg.roundTo > 0) val = Math.floor(val / cfg.roundTo) * cfg.roundTo;
+    return cfg.currency + ' ' + val.toLocaleString('tr-TR');
+}
+
+// ★★★ AKILLI RÜTBE EŞLEŞTİRİCİ — Roman ↔ Arabic, varyasyonlar
+function normalizeRank(rank) {
+    if (!rank) return '';
+    let s = String(rank).toLowerCase().trim();
+    // Roman → Arabic (uzun olanı önce)
+    s = s.replace(/\biii\+i\b/g, '3+1')
+         .replace(/\biii\b/g, '3')
+         .replace(/\bii\+i\b/g, '2+1')
+         .replace(/\bii\b/g, '2')
+         .replace(/\bi\+i\b/g, '1+1')
+         .replace(/\biv\b/g, '4')
+         .replace(/\bv\b/g, '5')
+         .replace(/\bi\b/g, '1');
+    s = s.replace(/\s+/g, ' ').trim();
+    return s;
+}
+
+function getRankWeight(rank) {
+    if (!rank) return 0;
+    
+    // 1) Tam eşleşme
+    if (cfg.rankWeight[rank] != null) return cfg.rankWeight[rank];
+    
+    // 2) Normalize edilmiş eşleşme (Captain I → captain 1)
+    const normInput = normalizeRank(rank);
+    for (const [k, v] of Object.entries(cfg.rankWeight)) {
+        if (normalizeRank(k) === normInput) return v;
+    }
+    
+    // 3) İçerme — config'deki kelime input'ta varsa
+    let bestMatch = null;
+    let bestLen = 0;
+    for (const [k, v] of Object.entries(cfg.rankWeight)) {
+        const nk = normalizeRank(k);
+        if (normInput.includes(nk) && nk.length > bestLen) {
+            bestMatch = v;
+            bestLen = nk.length;
+        }
+    }
+    if (bestMatch != null) return bestMatch;
+    
+    // 4) Bilinmeyen rütbe
+    if (!window._unknownRanks) window._unknownRanks = new Set();
+    if (!window._unknownRanks.has(rank)) {
+        window._unknownRanks.add(rank);
+        console.warn(`[Payroll] Bilinmeyen rütbe: "${rank}" → ⚙️ Ayarlar'dan ekle`);
+    }
+    return 1;
+}
+
+// ─── HAFTA ───
+function buildWeeks() {
+    const sel = document.getElementById('weekSel');
+    let opts = '';
+    const now = new Date();
+    const m = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+    for (let i = 0; i < 12; i++) {
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - now.getDay() + 1 - i * 7);
+        monday.setHours(0,0,0,0);
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        const key = monday.toISOString().slice(0,10);
+        const label = `${monday.getDate()} ${m[monday.getMonth()]} - ${sunday.getDate()} ${m[sunday.getMonth()]} ${sunday.getFullYear()}`;
+        opts += `<option value="${key}" ${i===0?'selected':''}>${label}${i===0?' (bu hafta)':''}</option>`;
+    }
+    sel.innerHTML = opts;
+    currentWeek = sel.value;
+}
+
+// ─── HESAPLAMA ───
+function getWeek() {
+    if (!weekData[currentWeek]) weekData[currentWeek] = { income: 800000, ftoId: '', officerId: '', hours: {} };
+    return weekData[currentWeek];
+}
+
+function calcDistribution() {
+    const w = getWeek();
+    const income = parseFloat(w.income) || 0;
+    const salaryPool = income * cfg.salaryRatio;
+    const bonusPool = income * cfg.poolRatio;
+    const ftoAward = bonusPool * (cfg.ftoPercent / 100);
+    const officerAward = bonusPool * (cfg.officerPercent / 100);
+    const nightPool = bonusPool - ftoAward - officerAward;
+    
+    let totalRankWeight = 0;
+    for (const p of allPersonnel) totalRankWeight += getRankWeight(getRank(p));
+    
+    let totalNightHours = 0;
+    for (const id in (w.hours || {})) totalNightHours += parseFloat(w.hours[id]) || 0;
+    
+    const nightRate = totalNightHours > 0 ? nightPool / totalNightHours : 0;
+    
+    return { income, salaryPool, bonusPool, ftoAward, officerAward, nightPool, nightRate, totalRankWeight, totalNightHours };
+}
+
+function calcPerson(p, dist) {
+    const w = getWeek();
+    const rankWeight = getRankWeight(getRank(p));
+    const nightHours = parseFloat((w.hours || {})[p.id]) || 0;
+    const salaryShare = dist.totalRankWeight > 0 ? (rankWeight / dist.totalRankWeight) * dist.salaryPool : 0;
+    const nightPay = nightHours * dist.nightRate;
+    const isFto = String(w.ftoId) === String(p.id);
+    const isOfficer = String(w.officerId) === String(p.id);
+    const award = (isFto ? dist.ftoAward : 0) + (isOfficer ? dist.officerAward : 0);
+    return { salaryShare, nightHours, nightPay, isFto, isOfficer, award, total: salaryShare + nightPay + award };
+}
+
+// ─── RENDER ───
+function renderBreakdown() {
+    const d = calcDistribution();
+    document.getElementById('breakdown').innerHTML = `
+        <div class="bd-card salary"><div class="bd-label">🎖️ Maaş Havuzu</div><div class="bd-value">${fmt(d.salaryPool)}</div><div class="bd-meta">${(cfg.salaryRatio*100).toFixed(1)}%</div></div>
+        <div class="bd-card pool"><div class="bd-label">💎 Prim Havuzu</div><div class="bd-value">${fmt(d.bonusPool)}</div><div class="bd-meta">${(cfg.poolRatio*100).toFixed(1)}%</div></div>
+        <div class="bd-card fto"><div class="bd-label">🎓 FTO Ödülü</div><div class="bd-value">${fmt(d.ftoAward)}</div><div class="bd-meta">Havuzun %${cfg.ftoPercent}</div></div>
+        <div class="bd-card officer"><div class="bd-label">🏆 Memur Ödülü</div><div class="bd-value">${fmt(d.officerAward)}</div><div class="bd-meta">Havuzun %${cfg.officerPercent}</div></div>
+        <div class="bd-card night"><div class="bd-label">🌙 Night Havuzu</div><div class="bd-value">${fmt(d.nightPool)}</div><div class="bd-meta">${d.totalNightHours.toFixed(1)} sa · ${fmt(d.nightRate)}/sa</div></div>
+    `;
+    document.getElementById('ftoAmount').textContent = fmt(d.ftoAward);
+    document.getElementById('officerAmount').textContent = fmt(d.officerAward);
+}
+
+function renderAwardSelects() {
+    const w = getWeek();
+    const opts = '<option value="">— Seç —</option>' + 
+        allPersonnel.map(p => `<option value="${p.id}">${escapeHTML(getName(p))} ${getCallsign(p)?`[${getCallsign(p)}]`:''}</option>`).join('');
+    const ftoSel = document.getElementById('ftoSel');
+    const offSel = document.getElementById('officerSel');
+    ftoSel.innerHTML = opts;
+    offSel.innerHTML = opts;
+    ftoSel.value = w.ftoId || '';
+    offSel.value = w.officerId || '';
+    document.getElementById('ftoCard').classList.toggle('has-award', !!w.ftoId);
+    document.getElementById('officerCard').classList.toggle('has-award', !!w.officerId);
+}
+
+function renderTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const tbody = document.getElementById('payTbody');
+    const dist = calcDistribution();
+    const w = getWeek();
+    
+    const filtered = allPersonnel.filter(p => {
+        if (!search) return true;
+        return getName(p).toLowerCase().includes(search) ||
+               getCallsign(p).toLowerCase().includes(search) ||
+               getRank(p).toLowerCase().includes(search);
+    });
+    
+    if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">Personel bulunamadı</td></tr>`; return; }
+    
+    tbody.innerHTML = filtered.map(p => {
+        const calc = calcPerson(p, dist);
+        const name = getName(p);
+        const cs = getCallsign(p);
+        const nightHours = parseFloat((w.hours || {})[p.id]) || '';
+        const rowClass = calc.isFto ? 'is-fto' : (calc.isOfficer ? 'is-officer' : '');
+        const tags = [];
+        if (calc.isFto) tags.push('<span class="role-tag fto">🎓 FTO</span>');
+        if (calc.isOfficer) tags.push('<span class="role-tag officer">🏆 MEMUR</span>');
+        return `
+            <tr data-pid="${p.id}" class="${rowClass}">
+                <td>
+                    <div class="row-name">
+                        <div class="row-avatar">${getInitials(name)}</div>
+                        <div>
+                            <div class="row-name-text">${escapeHTML(name)}${tags.join('')}</div>
+                            <div class="row-meta">${cs?`[${escapeHTML(cs)}] · `:''}${escapeHTML(getRank(p))} (ağ. ${getRankWeight(getRank(p))})</div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="cell-amount salary">${fmt(calc.salaryShare)}</span></td>
+                <td><input type="number" class="row-input night" min="0" step="0.5" value="${nightHours}" placeholder="0" onchange="updateNight(${p.id}, this.value)"></td>
+                <td><span class="cell-amount night">${fmt(calc.nightPay)}</span></td>
+                <td>${calc.award > 0 ? `<span class="cell-amount bonus">${fmt(calc.award)}</span>` : '—'}</td>
+                <td style="text-align:right;"><span class="cell-total">${fmt(calc.total)}</span></td>
+                <td style="text-align:right;"><button class="btn-sec" style="padding:5px 9px;" onclick="openDetail(${p.id})" title="Detay">👁</button></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function rerenderAll() {
+    renderBreakdown();
+    renderTable();
+    // Mesaide sayısı badge güncelle
+    const badge = document.getElementById('dutyCountBadge');
+    if (badge) badge.textContent = `${allPersonnel.length} mesaide`;
+}
+
+
+
+// ─── ACTIONS ───
+function onIncomeChange() {
+    getWeek().income = parseFloat(document.getElementById('incomeInput').value) || 0;
+    saveWeekData(); rerenderAll();
+}
+function updateNight(personId, value) {
+    const w = getWeek();
+    if (!w.hours) w.hours = {};
+    w.hours[personId] = parseFloat(value) || 0;
+    saveWeekData(); rerenderAll();
+}
+function onAwardChange() {
+    const w = getWeek();
+    w.ftoId = document.getElementById('ftoSel').value;
+    w.officerId = document.getElementById('officerSel').value;
+    saveWeekData();
+    document.getElementById('ftoCard').classList.toggle('has-award', !!w.ftoId);
+    document.getElementById('officerCard').classList.toggle('has-award', !!w.officerId);
+    renderTable();
+}
+function resetWeek() {
+    if (!confirm('Bu haftanın tüm verileri silinsin mi?')) return;
+    delete weekData[currentWeek];
+    saveWeekData();
+    loadPayroll();
+}
+
+async function autoFillFromDuty() {
+    if (!confirm('DB\'den night shift saatleri çekilsin mi? Mevcut night saatleri ÜZERİNE YAZILACAK.')) return;
+    const endpoints = [`/duty/summary?week=${currentWeek}`, `/duty/weekly?start=${currentWeek}`, `/stats/duty-by-person?week=${currentWeek}`];
+    let summary = null;
+    for (const ep of endpoints) {
+        try { const r = await api.get(ep); if (r?.data) { summary = r.data; break; } } catch {}
+    }
+    if (!summary) { alert('⚠️ Mesai endpoint\'i bulunamadı.\n\nBackend\'e ekle:\n  GET /api/duty/summary?week=YYYY-MM-DD\nDönüş: { "personId": { nightHours: X } }'); return; }
+    const w = getWeek();
+    if (!w.hours) w.hours = {};
+    let filled = 0;
+    for (const p of allPersonnel) {
+        const s = summary[p.id] || summary[String(p.id)];
+        if (!s) continue;
+        w.hours[p.id] = parseFloat(s.nightHours || s.night_hours || 0);
+        filled++;
+    }
+    saveWeekData(); rerenderAll();
+    alert(`✅ ${filled} personelin night saati dolduruldu`);
+}
+
+function exportCSV() {
+    const dist = calcDistribution();
+    const rows = [
+        [`Hafta: ${currentWeek}`, `Gelir: ${dist.income}`, '', '', ''],
+        ['Personel', 'Rütbe', 'Rütbe Maaşı', 'Night (sa)', 'Night Primi', 'Hafta Ödülü', 'Toplam'],
+    ];
+    for (const p of allPersonnel) {
+        const calc = calcPerson(p, dist);
+        rows.push([getName(p), getRank(p), Math.round(calc.salaryShare), calc.nightHours, Math.round(calc.nightPay), Math.round(calc.award), Math.round(calc.total)]);
+    }
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `bordro-${currentWeek}.csv`; a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ─── DETAIL ───
+function openDetail(id) {
+    const p = allPersonnel.find(x => String(x.id) === String(id));
+    if (!p) return;
+    const dist = calcDistribution();
+    const calc = calcPerson(p, dist);
+    document.getElementById('modalRoot')?.remove();
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="modalRoot" class="modal-bg" onclick="if(event.target.id==='modalRoot') document.getElementById('modalRoot').remove()">
+            <div class="modal-card">
+                <div class="modal-head">
+                    <div>
+                        <h3 style="margin:0; color:#fff; font-size:15px;">${escapeHTML(getName(p))}</h3>
+                        <p style="margin:2px 0 0; color:var(--text-mute); font-size:11px;">${escapeHTML(getRank(p))} · Hafta ${currentWeek}</p>
+                    </div>
+                    <button onclick="document.getElementById('modalRoot').remove()" style="background:none; border:none; color:#888; font-size:22px; cursor:pointer;">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="detail-grid">
+                        <div class="detail-row"><span class="lbl">🎖️ Rütbe Ağırlığı</span><span class="val">${getRankWeight(getRank(p))} / ${dist.totalRankWeight}</span></div>
+                        <div class="detail-row"><span class="lbl">Maaş havuzu (${fmt(dist.salaryPool)})</span><span class="val add">${(getRankWeight(getRank(p))/dist.totalRankWeight*100).toFixed(2)}% pay</span></div>
+                        <div class="detail-row"><span class="lbl">→ Rütbe Maaşı</span><span class="val add">+ ${fmt(calc.salaryShare)}</span></div>
+                        <div class="detail-row" style="border-top:1px solid var(--border); padding-top:10px; margin-top:6px;"><span class="lbl">🌙 Night Saati</span><span class="val">${calc.nightHours.toFixed(1)} sa</span></div>
+                        <div class="detail-row"><span class="lbl">Saat başı oran</span><span class="val">${fmt(dist.nightRate)}/sa</span></div>
+                        <div class="detail-row"><span class="lbl">→ Night Primi</span><span class="val add">+ ${fmt(calc.nightPay)}</span></div>
+                        ${calc.isFto ? `<div class="detail-row" style="border-top:1px solid var(--border); padding-top:10px; margin-top:6px;"><span class="lbl">🎓 Haftanın FTO'su</span><span class="val add">+ ${fmt(dist.ftoAward)}</span></div>` : ''}
+                        ${calc.isOfficer ? `<div class="detail-row" ${!calc.isFto?'style="border-top:1px solid var(--border); padding-top:10px; margin-top:6px;"':''}><span class="lbl">🏆 Haftanın Memuru</span><span class="val add">+ ${fmt(dist.officerAward)}</span></div>` : ''}
+                    </div>
+                    <div class="detail-total">
+                        <span class="lbl">TOPLAM PRİM</span>
+                        <span class="val">${fmt(calc.total)}</span>
+                    </div>
+                </div>
+                <div class="modal-foot"><button class="btn-pri" onclick="document.getElementById('modalRoot').remove()">Tamam</button></div>
+            </div>
+        </div>
+    `);
+}
+
+// ─── CONFIG MODAL ───
+function openConfig() {
+    document.getElementById('modalRoot')?.remove();
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="modalRoot" class="modal-bg" onclick="if(event.target.id==='modalRoot') document.getElementById('modalRoot').remove()">
+            <div class="modal-card">
+                <div class="modal-head">
+                    <h3 style="margin:0; color:#fff; font-size:15px;">⚙️ Ayarlar</h3>
+                    <button onclick="document.getElementById('modalRoot').remove()" style="background:none; border:none; color:#888; font-size:22px; cursor:pointer;">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="cfg-section-head">Yuvarlama</div>
+                    <div class="cfg-row">
+                        <label>Yuvarlama Birimi <small>5000, 1000, 0=kapalı</small></label>
+                        <input id="cfg_round" type="number" step="1000" min="0" value="${cfg.roundTo || 5000}">
+                    </div>
+                    
+                    <div class="cfg-section-head">Havuz Bölünmesi</div>
+                    <div class="cfg-row">
+                        <label>Maaş Oranı <small>Default 7/8 = 0.875</small></label>
+                        <input id="cfg_sal" type="number" step="0.001" min="0" max="1" value="${cfg.salaryRatio}">
+                    </div>
+                    <div class="cfg-row">
+                        <label>Prim Havuzu Oranı <small>Default 1/8 = 0.125</small></label>
+                        <input id="cfg_pool" type="number" step="0.001" min="0" max="1" value="${cfg.poolRatio}">
+                    </div>
+                    
+                    <div class="cfg-section-head">Hafta Ödülleri (Prim Havuzunun %'si)</div>
+                    <div class="cfg-row"><label>FTO Ödülü %</label><input id="cfg_fto" type="number" step="1" min="0" max="100" value="${cfg.ftoPercent}"></div>
+                    <div class="cfg-row"><label>Memur Ödülü %</label><input id="cfg_off" type="number" step="1" min="0" max="100" value="${cfg.officerPercent}"></div>
+                    
+                    <div class="cfg-section-head">Rütbe Ağırlıkları</div>
+                    <p style="font-size:11px; color:var(--text-mute); margin:0 0 6px;">Captain (28) ÷ Cadet (5) → Captain 5.6× Cadet maaşı alır</p>
+                    ${Object.keys(cfg.rankWeight).map(rank => `
+                        <div class="cfg-row">
+                            <label>${escapeHTML(rank)}</label>
+                            <input class="cfg_rank" data-rank="${escapeHTML(rank)}" type="number" step="1" min="0" value="${cfg.rankWeight[rank]}">
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="modal-foot">
+                    <button class="btn-sec" onclick="document.getElementById('modalRoot').remove()">İptal</button>
+                    <button class="btn-pri" onclick="saveConfig()">✅ Kaydet</button>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function saveConfig() {
+    cfg.roundTo = parseFloat(document.getElementById('cfg_round').value) || 0;
+    cfg.salaryRatio = parseFloat(document.getElementById('cfg_sal').value) || 0;
+    cfg.poolRatio = parseFloat(document.getElementById('cfg_pool').value) || 0;
+    cfg.ftoPercent = parseFloat(document.getElementById('cfg_fto').value) || 0;
+    cfg.officerPercent = parseFloat(document.getElementById('cfg_off').value) || 0;
+    document.querySelectorAll('.cfg_rank').forEach(inp => {
+        cfg.rankWeight[inp.dataset.rank] = parseFloat(inp.value) || 0;
+    });
+    saveCfg(cfg);
+    document.getElementById('modalRoot').remove();
+    rerenderAll();
+    if (typeof showSuccess === 'function') showSuccess('✅ Ayarlar kaydedildi');
+}
+
+// ─── LOAD ───
+async function loadPayroll() {
+    currentWeek = document.getElementById('weekSel').value;
+    document.getElementById('weekTitle').textContent = document.getElementById('weekSel').options[document.getElementById('weekSel').selectedIndex].text;
+    const w = getWeek();
+    document.getElementById('incomeInput').value = w.income || 0;
+    
+    if (!allPersonnel.length) {
+        document.getElementById('payTbody').innerHTML = `<tr><td colspan="7" class="empty-row"><div class="spinner"></div><div style="margin-top:10px;">Mesaide olanlar yükleniyor...</div></td></tr>`;
+        
+        try {
+            // ŞUAN AKTİF MESAİDE OLANLARI ÇEK
+            const dutyRes = await api.get('/duty/active');
+            
+            // Esnek parse — endpoint farklı format dönebilir
+            let dutyList = dutyRes?.data?.personnel 
+                        || dutyRes?.data?.members 
+                        || dutyRes?.data?.items
+                        || dutyRes?.data 
+                        || dutyRes?.personnel
+                        || dutyRes?.members
+                        || dutyRes;
+            
+            if (!Array.isArray(dutyList)) {
+                console.error('[Payroll] /duty/active beklenmedik format:', dutyRes);
+                dutyList = [];
+            }
+            
+            console.log(`[Payroll] /duty/active → ${dutyList.length} kişi aktif`);
+            console.log('[Payroll] İlk aktif kişi örneği:', dutyList[0]);
+            
+            // duty/active sadece minimal bilgi dönüyor olabilir → ic_name yoksa personnel'den çek
+            const needsEnrichment = dutyList.length > 0 && !dutyList[0].ic_name && !dutyList[0].rank_name;
+            
+            if (needsEnrichment) {
+                console.log('[Payroll] Detay bilgi çekiliyor...');
+                const allRes = await api.get('/personnel?limit=500');
+                const allPpl = allRes?.data?.personnel || allRes?.data || [];
+                const pplMap = new Map(allPpl.map(p => [String(p.id), p]));
+                
+                // Her aktif kişiye personnel detaylarını ekle
+                dutyList = dutyList.map(d => {
+                    // Kişiyi bulmak için olası ID alanları
+                    const pid = d.personnel_id || d.id || d.user_id;
+                    const full = pplMap.get(String(pid));
+                    return full ? { ...full, ...d, id: full.id } : d;
+                }).filter(p => p.id); // ID'si olmayanları at
+                
+                console.log(`[Payroll] ${dutyList.length} aktif kişi zenginleştirildi`);
+            }
+            
+            allPersonnel = dutyList;
+            
+        } catch (e) {
+            showError('Aktif mesaideler yüklenemedi: ' + e.message);
+            console.error(e);
+            return;
+        }
+    }
+    
+    renderAwardSelects();
+    rerenderAll();
+    
+    const badge = document.getElementById('dutyCountBadge');
+    if (badge) badge.textContent = `${allPersonnel.length} mesaide`;
+    
+    // Night saatlerini otomatik doldur
+    if (Object.keys(w.hours || {}).length === 0) {
+        try {
+            const sumRes = await api.get(`/duty/summary?week=${currentWeek}`);
+            if (sumRes?.data) {
+                const newHours = {};
+                for (const p of allPersonnel) {
+                    const s = sumRes.data[p.id] || sumRes.data[String(p.id)];
+                    if (s) newHours[p.id] = parseFloat(s.nightHours || 0);
+                }
+                w.hours = newHours;
+                saveWeekData();
+                rerenderAll();
+                console.log('[Payroll] Night saatleri otomatik dolduruldu');
+            }
+        } catch {}
+    }
+}
+
+document.getElementById('searchInput').addEventListener('input', renderTable);
+
+async function reloadPersonnel() {
+    allPersonnel = []; // cache'i sıfırla
+    document.getElementById('dutyCountBadge').textContent = 'yükleniyor...';
+    await loadPayroll();
+}
+
+buildWeeks();
+loadWeekData();
+loadPayroll();
+</script>
+</body>
+</html>

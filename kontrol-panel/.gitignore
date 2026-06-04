@@ -1,0 +1,8 @@
+node_modules/
+.env
+users.json
+activity.json
+terminal_sessions.json
+*.log
+npm-debug.log*
+.DS_Store

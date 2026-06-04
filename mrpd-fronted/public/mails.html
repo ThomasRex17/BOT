@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mail Kutusu · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>Mail Kutusu</h1>
+            <p>Departman içi mesajlaşma</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 280px 1fr; gap: 16px; height: calc(100vh - 240px);">
+            <!-- Sol: Mail Listesi -->
+            <div class="table-card" style="display: flex; flex-direction: column;">
+                <div class="table-card-head">
+                    <div class="table-card-title" style="font-size: 13px;">📥 Gelen Kutusu</div>
+                    <button class="btn btn-primary btn-xs" onclick="composeMail()">✉️ Yeni</button>
+                </div>
+                <div id="mailList" style="overflow-y: auto; flex: 1;">
+                    <div style="padding: 14px;">
+                        <div onclick="viewMail(1)" style="padding: 12px; background: var(--bg-3); border-radius: 8px; margin-bottom: 6px; cursor: pointer; border: 1px solid var(--primary);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <strong style="font-size: 12px; color: #fff;">admin</strong>
+                                <span style="font-size: 10px; color: var(--text-mute);">2 sa önce</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-dim); font-weight: 600;">Hoş geldin!</div>
+                            <div style="font-size: 11px; color: var(--text-mute); margin-top: 2px;">Yeni sisteme hoş geldiniz...</div>
+                        </div>
+                        <div onclick="viewMail(2)" style="padding: 12px; background: var(--bg-3); border-radius: 8px; margin-bottom: 6px; cursor: pointer;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <strong style="font-size: 12px; color: var(--text-mute);">system</strong>
+                                <span style="font-size: 10px; color: var(--text-mute);">1 gün önce</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-dim); font-weight: 600;">Bot Senkron Aktif</div>
+                            <div style="font-size: 11px; color: var(--text-mute); margin-top: 2px;">Discord bot artık otomatik...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sağ: Mail İçeriği -->
+            <div class="table-card" style="display: flex; flex-direction: column;">
+                <div id="mailContent" style="padding: 28px; flex: 1; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--border);">
+                        <div>
+                            <h2 style="color: #fff; font-size: 22px; margin-bottom: 8px;">Hoş geldin!</h2>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="av av-sm">A</div>
+                                <div>
+                                    <div style="font-size: 13px; color: #fff; font-weight: 600;">admin</div>
+                                    <div style="font-size: 11px; color: var(--text-mute);">2 saat önce · Sana</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-ghost btn-sm">↩️ Cevapla</button>
+                            <button class="btn btn-danger btn-sm">🗑️ Sil</button>
+                        </div>
+                    </div>
+                    
+                    <div style="color: var(--text-dim); font-size: 14px; line-height: 1.7;">
+                        <p style="margin-bottom: 12px;">Selam memur,</p>
+                        <p style="margin-bottom: 12px;">MRPD yönetim sistemine hoş geldin! Bu sistem üzerinden:</p>
+                        <ul style="margin-left: 20px; margin-bottom: 12px;">
+                            <li>Mesailerin takip edilir</li>
+                            <li>Mazeret bildirebilirsin</li>
+                            <li>Personel listesini görebilirsin</li>
+                            <li>Profilini güncelleyebilirsin</li>
+                        </ul>
+                        <p style="margin-bottom: 12px;">Soruların için Discord'dan ulaşabilirsin.</p>
+                        <p style="margin-top: 24px; color: var(--text-mute); font-size: 12px;">— admin</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('mails');
+
+function viewMail(id) {
+    showSuccess('Mail görüntülendi (demo)');
+}
+
+function composeMail() {
+    showModal({
+        title: 'Yeni Mail',
+        size: 'lg',
+        body: `
+            <form id="mailForm">
+                <div class="form-group">
+                    <label>Alıcı *</label>
+                    <input name="to" required placeholder="kullanıcı adı veya 'all'" />
+                </div>
+                <div class="form-group">
+                    <label>Konu *</label>
+                    <input name="subject" required maxlength="100" />
+                </div>
+                <div class="form-group">
+                    <label>Mesaj *</label>
+                    <textarea name="body" required maxlength="5000" style="min-height: 180px;"></textarea>
+                </div>
+            </form>
+        `,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'send', label: '📤 Gönder', class: 'btn-primary', onClick: () => {
+                showSuccess('Mail sistemi yakında aktif olacak!');
+                closeModal();
+            }},
+        ],
+    });
+}
+</script>
+</body>
+</html>

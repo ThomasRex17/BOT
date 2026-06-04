@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rozet & Madalya · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 18px; }
+.badge-card {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 16px;
+    text-align: center;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+.badge-card:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 12px 30px var(--primary-glow); }
+.badge-card-glow {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, var(--badge-color, var(--primary)) 0%, transparent 60%);
+    opacity: 0.08; pointer-events: none;
+}
+.badge-icon-wrap {
+    width: 72px; height: 72px;
+    margin: 0 auto 14px;
+    background: linear-gradient(135deg, var(--badge-color, var(--primary)), color-mix(in srgb, var(--badge-color, var(--primary)) 60%, black));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 32px;
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--badge-color, var(--primary)) 40%, transparent), inset 0 -3px 8px rgba(0,0,0,0.3);
+    position: relative;
+}
+.badge-name { font-weight: 700; font-size: 14px; color: #fff; margin-bottom: 6px; }
+.badge-desc { font-size: 11px; color: var(--text-mute); margin-bottom: 14px; line-height: 1.45; min-height: 32px; }
+.badge-meta { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.badge-pill { padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+.badge-pill.holders { background: var(--bg-1); color: var(--text-dim); border: 1px solid var(--border); }
+.badge-pill.cat { background: var(--primary-soft); color: var(--primary-light); border: 1px solid var(--primary); }
+.badge-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+.badge-card:hover .badge-actions { opacity: 1; }
+.badge-act-btn { width: 28px; height: 28px; border-radius: 7px; background: rgba(0,0,0,0.6); border: 1px solid var(--border); color: #fff; cursor: pointer; display: grid; place-items: center; font-size: 12px; }
+.badge-act-btn:hover { background: var(--primary); }
+.badge-act-btn.danger:hover { background: #dc2626; }
+.empty-state { padding: 60px 20px; text-align: center; color: var(--text-mute); }
+.empty-state .ico { font-size: 56px; margin-bottom: 12px; opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>🎖️ Rozet & Madalya Yönetimi</h1>
+            <p>Madalyalar, rozetler ve liyakat işaretleri</p>
+        </div>
+        
+        <div class="stats-row" id="statsRow"></div>
+        
+        <div class="table-card">
+            <div class="table-card-head">
+                <div class="tabs" id="categoryTabs">
+                    <button class="tab-btn active" data-cat="all">Tümü</button>
+                    <button class="tab-btn" data-cat="medal">🏅 Madalya</button>
+                    <button class="tab-btn" data-cat="badge">⭐ Rozet</button>
+                    <button class="tab-btn" data-cat="merit">🎓 Liyakat</button>
+                </div>
+                <button class="btn btn-primary" onclick="openCreateModal()">+ Yeni Rozet</button>
+            </div>
+            
+            <div id="badgesContainer">
+                <div class="loading"><div class="spinner"></div></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* staff değil */ }
+        if (!Perms.require(PERM.PAGE_BADGES)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('badges');
+
+let allBadges = [];
+let currentCat = 'all';
+
+const SAMPLE_BADGES = [
+    { id: 1, name: 'Cesaret Madalyası', desc: 'Olağanüstü cesaret gösteren memurlara verilir.', icon: '🥇', color: '#fbbf24', cat: 'medal', holders: 0 },
+    { id: 2, name: 'Liyakat Madalyası', desc: 'Üstün başarılı görev tamamlayanlara.', icon: '🏅', color: '#a855f7', cat: 'medal', holders: 0 },
+    { id: 3, name: 'Hizmet Yıldızı', desc: '1 yıllık aktif hizmet için.', icon: '⭐', color: '#3b82f6', cat: 'badge', holders: 0 },
+    { id: 4, name: 'FTO Sertifikası', desc: 'Eğitmen yetkisi.', icon: '🎓', color: '#22c55e', cat: 'merit', holders: 0 },
+    { id: 5, name: 'K-9 Sertifikası', desc: 'K-9 birim eğitimi.', icon: '🐕', color: '#ef4444', cat: 'merit', holders: 0 },
+    { id: 6, name: 'Pilot Sertifikası', desc: 'Helikopter kullanma yetkisi.', icon: '🚁', color: '#06b6d4', cat: 'merit', holders: 0 },
+    { id: 7, name: 'SWAT Yetki Rozeti', desc: 'Özel harekat birimi yetkisi.', icon: '🛡️', color: '#dc2626', cat: 'badge', holders: 0 },
+    { id: 8, name: 'Şehit Madalyası', desc: 'Görev başında hayatını kaybedenlere.', icon: '🕊️', color: '#94a3b8', cat: 'medal', holders: 0 },
+];
+
+async function loadBadges() {
+    try {
+        const res = await api.get('/badges').catch(() => ({ data: null }));
+        allBadges = (res && res.data && res.data.length) ? res.data : SAMPLE_BADGES;
+    } catch (e) {
+        allBadges = SAMPLE_BADGES;
+    }
+    renderStats();
+    renderBadges();
+}
+
+function renderStats() {
+    const total = allBadges.length;
+    const medal = allBadges.filter(b => b.cat === 'medal').length;
+    const badge = allBadges.filter(b => b.cat === 'badge').length;
+    const merit = allBadges.filter(b => b.cat === 'merit').length;
+    
+    document.getElementById('statsRow').innerHTML = `
+        <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">🎖️</div><div class="stat-content"><div class="label">Toplam</div><div class="value">${total}</div></div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#fbbf24,#d97706);">🏅</div><div class="stat-content"><div class="label">Madalya</div><div class="value">${medal}</div></div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">⭐</div><div class="stat-content"><div class="label">Rozet</div><div class="value">${badge}</div></div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:linear-gradient(135deg,#22c55e,#15803d);">🎓</div><div class="stat-content"><div class="label">Liyakat</div><div class="value">${merit}</div></div></div>
+    `;
+}
+
+function renderBadges() {
+    const filtered = currentCat === 'all' ? allBadges : allBadges.filter(b => b.cat === currentCat);
+    const c = document.getElementById('badgesContainer');
+    
+    if (!filtered.length) {
+        c.innerHTML = `<div class="empty-state"><div class="ico">🎖️</div><div>Bu kategoride henüz rozet yok</div><button class="btn btn-primary" style="margin-top:14px;" onclick="openCreateModal()">+ İlk Rozeti Ekle</button></div>`;
+        return;
+    }
+    
+    c.innerHTML = `<div class="badge-grid">${filtered.map(b => `
+        <div class="badge-card" style="--badge-color: ${b.color};">
+            <div class="badge-card-glow"></div>
+            <div class="badge-actions">
+                <button class="badge-act-btn" onclick="editBadge(${b.id})" title="Düzenle">✏️</button>
+                <button class="badge-act-btn danger" onclick="deleteBadge(${b.id})" title="Sil">🗑️</button>
+            </div>
+            <div class="badge-icon-wrap">${b.icon}</div>
+            <div class="badge-name">${b.name}</div>
+            <div class="badge-desc">${b.desc || ''}</div>
+            <div class="badge-meta">
+                <span class="badge-pill holders">${b.holders || 0} kişi</span>
+                <span class="badge-pill cat">${b.cat === 'medal' ? 'Madalya' : b.cat === 'badge' ? 'Rozet' : 'Liyakat'}</span>
+            </div>
+        </div>
+    `).join('')}</div>`;
+}
+
+document.querySelectorAll('#categoryTabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#categoryTabs .tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCat = btn.dataset.cat;
+        renderBadges();
+    });
+});
+
+function openCreateModal() {
+    openModal({
+        title: '+ Yeni Rozet / Madalya',
+        body: `
+            <div style="display:grid; gap:12px;">
+                <div><label>İsim</label><input id="b_name" class="input" placeholder="Cesaret Madalyası" /></div>
+                <div><label>Açıklama</label><textarea id="b_desc" class="input" rows="2" placeholder="Açıklama..."></textarea></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <div><label>Emoji / İkon</label><input id="b_icon" class="input" placeholder="🥇" maxlength="4" /></div>
+                    <div><label>Renk</label><input id="b_color" type="color" class="input" value="#fbbf24" /></div>
+                </div>
+                <div><label>Kategori</label>
+                    <select id="b_cat" class="input">
+                        <option value="medal">Madalya</option>
+                        <option value="badge">Rozet</option>
+                        <option value="merit">Liyakat</option>
+                    </select>
+                </div>
+            </div>`,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: 'Oluştur', class: 'btn-primary', onClick: saveBadge },
+        ],
+    });
+}
+
+async function saveBadge() {
+    const data = {
+        name: document.getElementById('b_name').value.trim(),
+        desc: document.getElementById('b_desc').value.trim(),
+        icon: document.getElementById('b_icon').value.trim() || '🎖️',
+        color: document.getElementById('b_color').value,
+        cat: document.getElementById('b_cat').value,
+        holders: 0,
+    };
+    if (!data.name) { showError('İsim zorunlu'); return; }
+    
+    try {
+        await api.post('/badges', data).catch(() => null);
+    } catch(e) {}
+    
+    data.id = Date.now();
+    allBadges.push(data);
+    renderStats(); renderBadges();
+    closeModal();
+    showSuccess('Rozet eklendi');
+}
+
+function editBadge(id) {
+    const b = allBadges.find(x => x.id === id);
+    if (!b) return;
+    openModal({
+        title: 'Rozet Düzenle',
+        body: `
+            <div style="display:grid; gap:12px;">
+                <div><label>İsim</label><input id="b_name" class="input" value="${b.name}" /></div>
+                <div><label>Açıklama</label><textarea id="b_desc" class="input" rows="2">${b.desc || ''}</textarea></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <div><label>İkon</label><input id="b_icon" class="input" value="${b.icon}" /></div>
+                    <div><label>Renk</label><input id="b_color" type="color" class="input" value="${b.color}" /></div>
+                </div>
+                <div><label>Kategori</label>
+                    <select id="b_cat" class="input">
+                        <option value="medal" ${b.cat==='medal'?'selected':''}>Madalya</option>
+                        <option value="badge" ${b.cat==='badge'?'selected':''}>Rozet</option>
+                        <option value="merit" ${b.cat==='merit'?'selected':''}>Liyakat</option>
+                    </select>
+                </div>
+            </div>`,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: 'Kaydet', class: 'btn-primary', onClick: () => updateBadge(id) },
+        ],
+    });
+}
+
+async function updateBadge(id) {
+    const idx = allBadges.findIndex(x => x.id === id);
+    if (idx < 0) return;
+    allBadges[idx] = {
+        ...allBadges[idx],
+        name: document.getElementById('b_name').value.trim(),
+        desc: document.getElementById('b_desc').value.trim(),
+        icon: document.getElementById('b_icon').value.trim() || allBadges[idx].icon,
+        color: document.getElementById('b_color').value,
+        cat: document.getElementById('b_cat').value,
+    };
+    try { await api.put(`/badges/${id}`, allBadges[idx]).catch(() => null); } catch(e) {}
+    renderStats(); renderBadges(); closeModal();
+    showSuccess('Güncellendi');
+}
+
+async function deleteBadge(id) {
+    if (!confirm('Bu rozeti silmek istediğine emin misin?')) return;
+    allBadges = allBadges.filter(x => x.id !== id);
+    try { await api.delete(`/badges/${id}`).catch(() => null); } catch(e) {}
+    renderStats(); renderBadges();
+    showSuccess('Silindi');
+}
+
+loadBadges();
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Form Yönetimi · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>Form Yönetimi</h1>
+            <p id="totalCount">Başvuru formlarını yönet</p>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-card-head">
+                <div class="table-card-title">📋 Aktif Formlar</div>
+                <button class="btn btn-primary" onclick="openCreateModal()">+ Yeni Form</button>
+            </div>
+            <div id="loadingDiv" class="loading"><div class="spinner"></div></div>
+            <div id="formsContainer" style="display: none; padding: 14px;"></div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* staff değil */ }
+        if (!Perms.require(PERM.PAGE_FORMS)) { /* yönlendirildi */ }
+if (!Auth.isAdmin()) {
+    showError('Bu sayfa için admin yetkisi gerekli');
+    setTimeout(() => window.location.href = '/index.html', 1500);
+}
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('forms');
+
+async function loadForms() {
+    try {
+        const data = await fetchPublic('/applications/forms');
+        const forms = data.data || [];
+        
+        document.getElementById('totalCount').textContent = `Toplam ${forms.length} form`;
+        
+        const c = document.getElementById('formsContainer');
+        if (!forms.length) {
+            c.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Henüz form yok</div>';
+        } else {
+            c.innerHTML = forms.map(f => `
+                <div style="background: var(--bg-3); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 10px; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;">
+                    <div class="av" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">📋</div>
+                    <div>
+                        <div style="font-weight: 600; color: #fff; font-size: 14px;">${escapeHtml(f.title)}</div>
+                        ${f.description ? `<div style="font-size: 12px; color: var(--text-mute); margin-top: 4px;">${escapeHtml(f.description)}</div>` : ''}
+                        <div style="display: flex; gap: 6px; margin-top: 8px;">
+                            <span class="pill pill-primary">${(f.questions || []).length} soru</span>
+                            ${f.requires_login ? '<span class="pill pill-warn">🔒 Login gerekli</span>' : '<span class="pill pill-success">🌐 Açık</span>'}
+                            ${f.is_active ? '<span class="pill pill-success">● Aktif</span>' : '<span class="pill pill-mute">○ Pasif</span>'}
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <button class="btn btn-ghost btn-xs" onclick='openEditModal(${JSON.stringify(f).replace(/'/g, "&#39;")})'>Düzenle</button>
+                        <button class="btn btn-danger btn-xs" onclick="deleteForm(${f.id})">Sil</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        document.getElementById('loadingDiv').style.display = 'none';
+        c.style.display = 'block';
+    } catch (err) {
+        document.getElementById('loadingDiv').innerHTML = `<div class="empty">${err.message}</div>`;
+    }
+}
+
+let formQuestions = [];
+
+function renderQuestionsList() {
+    return formQuestions.map((q, i) => `
+        <div style="background: var(--bg-3); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; margin-bottom: 6px; display: flex; gap: 10px; align-items: center;">
+            <span style="font-weight: 700; color: var(--text-mute); width: 22px;">#${i+1}</span>
+            <input value="${escapeHtml(q.label)}" data-qi="${i}" data-qf="label" oninput="updateQuestion(${i}, 'label', this.value)" style="flex: 1; background: var(--bg-2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; color: var(--text); font-size: 12px;" placeholder="Soru..." />
+            <select data-qi="${i}" data-qf="type" onchange="updateQuestion(${i}, 'type', this.value)" style="background: var(--bg-2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; color: var(--text); font-size: 12px;">
+                <option value="text" ${q.type === 'text' ? 'selected' : ''}>Kısa Metin</option>
+                <option value="textarea" ${q.type === 'textarea' ? 'selected' : ''}>Uzun Metin</option>
+                <option value="email" ${q.type === 'email' ? 'selected' : ''}>Email</option>
+            </select>
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-mute);">
+                <input type="checkbox" ${q.required ? 'checked' : ''} onchange="updateQuestion(${i}, 'required', this.checked)" />
+                Zorunlu
+            </label>
+            <button onclick="removeQuestion(${i})" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">×</button>
+        </div>
+    `).join('');
+}
+
+function updateQuestion(i, field, value) {
+    if (formQuestions[i]) formQuestions[i][field] = value;
+}
+
+function addQuestion() {
+    formQuestions.push({ label: '', type: 'text', required: false });
+    document.getElementById('questionsContainer').innerHTML = renderQuestionsList();
+}
+
+function removeQuestion(i) {
+    formQuestions.splice(i, 1);
+    document.getElementById('questionsContainer').innerHTML = renderQuestionsList();
+}
+
+function formHtml(f) {
+    formQuestions = f?.questions ? [...f.questions] : [];
+    
+    return `
+        <form id="formForm">
+            <div class="form-group">
+                <label>Form Başlığı *</label>
+                <input name="title" required maxlength="100" value="${escapeHtml(f?.title || '')}" />
+            </div>
+            <div class="form-group">
+                <label>Açıklama</label>
+                <textarea name="description" maxlength="500">${escapeHtml(f?.description || '')}</textarea>
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>Login Gerekli mi?</label>
+                    <select name="requires_login">
+                        <option value="false" ${!f?.requires_login ? 'selected' : ''}>Hayır (Halka açık)</option>
+                        <option value="true" ${f?.requires_login ? 'selected' : ''}>Evet</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Aktif mi?</label>
+                    <select name="is_active">
+                        <option value="true" ${f?.is_active !== false ? 'selected' : ''}>Aktif</option>
+                        <option value="false" ${f?.is_active === false ? 'selected' : ''}>Pasif</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="margin-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label>Sorular</label>
+                    <button type="button" class="btn btn-ghost btn-xs" onclick="addQuestion()">+ Soru Ekle</button>
+                </div>
+                <div id="questionsContainer">${renderQuestionsList()}</div>
+            </div>
+        </form>
+    `;
+}
+
+function openCreateModal() {
+    showModal({
+        title: 'Yeni Form',
+        size: 'lg',
+        body: formHtml(null),
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: '+ Oluştur', class: 'btn-primary', onClick: () => saveForm(null) },
+        ],
+    });
+}
+
+function openEditModal(f) {
+    showModal({
+        title: 'Form Düzenle',
+        size: 'lg',
+        body: formHtml(f),
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: 'Kaydet', class: 'btn-primary', onClick: () => saveForm(f.id) },
+        ],
+    });
+}
+
+async function saveForm(id) {
+    const fd = new FormData(document.getElementById('formForm'));
+    const data = {
+        title: fd.get('title'),
+        description: fd.get('description') || null,
+        requires_login: fd.get('requires_login') === 'true',
+        is_active: fd.get('is_active') === 'true',
+        questions: formQuestions.filter(q => q.label && q.label.trim()),
+    };
+    
+    if (!data.title) { showError('Başlık gerekli'); return; }
+    
+    try {
+        if (id) await api.put(`/applications/forms/${id}`, data);
+        else await api.post('/applications/forms', data);
+        showSuccess(id ? 'Güncellendi' : 'Oluşturuldu');
+        closeModal();
+        loadForms();
+    } catch (err) { showError(err.message); }
+}
+
+function deleteForm(id) {
+    showConfirm('Bu formu silmek istediğine emin misin? Tüm başvurular da silinir.', async () => {
+        try {
+            await api.delete(`/applications/forms/${id}`);
+            showSuccess('Silindi');
+            loadForms();
+        } catch (err) { showError(err.message); }
+    });
+}
+
+loadForms();
+</script>
+</body>
+</html>

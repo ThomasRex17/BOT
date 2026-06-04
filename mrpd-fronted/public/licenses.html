@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Lisanslar · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>Lisans Yönetimi</h1>
+            <p id="totalCount">Yükleniyor...</p>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-card-head">
+                <div class="table-card-title">Lisanslar</div>
+                <button class="btn btn-primary" onclick="openCreateModal()">+ Yeni Lisans</button>
+            </div>
+            <div id="loadingDiv" class="loading"><div class="spinner"></div></div>
+            <div id="cardsContainer" style="display: none; padding: 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;"></div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.require(PERM.PAGE_LICENSES)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('licenses');
+
+async function loadLicenses() {
+    try {
+        const res = await api.get('/licenses');
+        const licenses = res.data;
+        document.getElementById('totalCount').textContent = `Toplam ${licenses.length} lisans tanımlı`;
+        
+        document.getElementById('cardsContainer').innerHTML = licenses.map(l => `
+            <div style="background: var(--bg-3); border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <div>
+                        <span class="pill" style="background: ${l.color}25; color: ${l.color}; border-color: ${l.color}50;">
+                            ${escapeHtml(l.name)}
+                        </span>
+                        ${l.short_name ? `<div style="font-size: 11px; color: var(--text-mute); margin-top: 4px;">${escapeHtml(l.short_name)}</div>` : ''}
+                    </div>
+                    <span class="pill pill-mute">${l.personnel_count} kişi</span>
+                </div>
+                ${l.description ? `<p style="font-size: 12px; color: var(--text-mute); line-height: 1.5; margin-bottom: 14px;">${escapeHtml(l.description)}</p>` : ''}
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn btn-ghost btn-xs" style="flex: 1;" onclick='openEditModal(${JSON.stringify(l).replace(/'/g, "&#39;")})'>Düzenle</button>
+                    <button class="btn btn-danger btn-xs" onclick="deleteLicense(${l.id})">Sil</button>
+                </div>
+            </div>
+        `).join('');
+        
+        document.getElementById('loadingDiv').style.display = 'none';
+        document.getElementById('cardsContainer').style.display = 'grid';
+    } catch (err) { document.getElementById('loadingDiv').innerHTML = `<div class="empty">${err.message}</div>`; }
+}
+
+function licenseFormHtml(l) {
+    return `
+        <form id="licenseForm">
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>Lisans Adı *</label>
+                    <input name="name" required maxlength="64" value="${escapeHtml(l?.name || '')}" />
+                </div>
+                <div class="form-group">
+                    <label>Kısa Ad</label>
+                    <input name="short_name" maxlength="16" value="${escapeHtml(l?.short_name || '')}" />
+                </div>
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>Renk</label>
+                    <input name="color" value="${l?.color || '#5865f2'}" />
+                </div>
+                <div class="form-group">
+                    <label>İkon</label>
+                    <input name="icon" maxlength="32" value="${escapeHtml(l?.icon || '')}" placeholder="shield, key..." />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Açıklama</label>
+                <textarea name="description" maxlength="500" style="min-height: 80px;">${escapeHtml(l?.description || '')}</textarea>
+            </div>
+        </form>
+    `;
+}
+
+function openCreateModal() {
+    showModal({
+        title: 'Yeni Lisans',
+        body: licenseFormHtml(null),
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: '+ Oluştur', class: 'btn-primary', onClick: () => saveLicense(null) },
+        ],
+    });
+}
+
+function openEditModal(l) {
+    showModal({
+        title: 'Lisans Düzenle',
+        body: licenseFormHtml(l),
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: 'Kaydet', class: 'btn-primary', onClick: () => saveLicense(l.id) },
+        ],
+    });
+}
+
+async function saveLicense(id) {
+    const fd = new FormData(document.getElementById('licenseForm'));
+    const data = {
+        name: fd.get('name'),
+        short_name: fd.get('short_name') || null,
+        color: fd.get('color') || '#5865f2',
+        icon: fd.get('icon') || null,
+        description: fd.get('description') || null,
+    };
+    try {
+        if (id) await api.put(`/licenses/${id}`, data);
+        else await api.post('/licenses', data);
+        showSuccess(id ? 'Güncellendi' : 'Oluşturuldu');
+        closeModal();
+        loadLicenses();
+    } catch (err) { showError(err.message); }
+}
+
+function deleteLicense(id) {
+    showConfirm('Bu lisansı silmek istediğine emin misin?', async () => {
+        try {
+            await api.delete(`/licenses/${id}`);
+            showSuccess('Silindi');
+            loadLicenses();
+        } catch (err) { showError(err.message); }
+    });
+}
+
+loadLicenses();
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+/* ============================================================
+   TUR 11 — HOTFIX LAYER v2 (Mayıs 23, 2026)
+   Bu dosya dashboard.css ve public.css'TEN SONRA yüklenir.
+   Tüm modal sorunlarını düzeltir.
+   ============================================================ */
+
+/* ─── 1) MODAL TEMEL — Görünür olduğunu GARANTİ ET ─────────── */
+.modal-bd,
+.modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    z-index: 99999 !important;
+    display: none;
+    padding: 24px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.modal-bd.show,
+.modal-backdrop.show {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    animation: hotfixModalFade 0.15s ease-out !important;
+}
+
+@keyframes hotfixModalFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* ─── 2) MODAL İÇİ — Boyut ve scroll ───────────────────────── */
+.modal-bd .modal-w,
+.modal-backdrop .modal {
+    background: var(--bg-2, #0f1525) !important;
+    border: 1px solid var(--border-strong, rgba(255,255,255,0.15)) !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    max-width: 580px !important;
+    max-height: calc(100vh - 48px) !important;
+    margin: auto !important;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.6) !important;
+    color: #fff !important;
+    /* Kritik: flex column ki header/footer sticky scroll yapabilsin */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    animation: hotfixSlideUp 0.2s ease-out !important;
+}
+
+@keyframes hotfixSlideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-bd .modal-w.lg,
+.modal-bd .modal-w.modal-lg { max-width: 800px !important; }
+.modal-bd .modal-w.xl { max-width: 1000px !important; }
+
+/* ─── 3) MODAL HEADER — Üstte sabit ─────────────────────────── */
+.modal-bd .modal-h,
+.modal-backdrop .modal-head {
+    padding: 18px 22px !important;
+    border-bottom: 1px solid var(--border, rgba(255,255,255,0.1)) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    background: var(--bg-2, #0f1525) !important;
+}
+
+/* ─── 4) MODAL BODY — Scrollable orta alan ─────────────────── */
+.modal-bd .modal-b,
+.modal-backdrop .modal-body {
+    padding: 22px !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    min-height: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* ─── 5) MODAL FOOTER — Altta sabit ─────────────────────────── */
+.modal-bd .modal-f,
+.modal-backdrop .modal-foot {
+    padding: 14px 22px !important;
+    border-top: 1px solid var(--border, rgba(255,255,255,0.1)) !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    flex-shrink: 0 !important;
+    background: var(--bg-2, #0f1525) !important;
+}
+
+/* ─── 6) TABBED MODAL — Personel düzenle özel ──────────────── */
+.modal-bd .modal-w.tabbed {
+    max-width: 880px !important;
+}
+
+.modal-bd .modal-w.tabbed .modal-b {
+    /* Tabbed modal'da body'nin padding'i 0 olmalı çünkü tabs grid kendi padding'ini halleder */
+    padding: 0 !important;
+}
+
+.modal-bd .modal-tabs {
+    display: grid !important;
+    grid-template-columns: 220px 1fr !important;
+    min-height: 460px !important;
+    height: 100% !important;
+}
+
+.modal-bd .modal-tabs-side {
+    background: rgba(0,0,0,0.35) !important;
+    border-right: 1px solid var(--border, rgba(255,255,255,0.08)) !important;
+    padding: 14px 10px !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.modal-bd .modal-tab-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 10px 14px !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: var(--text-dim, #cbd5e1) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+    font-family: inherit !important;
+    text-align: left !important;
+    transition: all 0.15s !important;
+}
+
+.modal-bd .modal-tab-btn:hover {
+    background: rgba(255,255,255,0.05) !important;
+    color: #fff !important;
+}
+
+.modal-bd .modal-tab-btn.active {
+    background: var(--primary, #f97316) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+.modal-bd .modal-tab-btn .tab-icon {
+    flex-shrink: 0 !important;
+    font-size: 14px !important;
+}
+
+.modal-bd .modal-tabs-content {
+    padding: 22px 26px !important;
+    overflow-y: auto !important;
+    min-height: 0 !important;
+}
+
+/* Tabbed modal'da footer'ı doğru yerleştir */
+.modal-bd .modal-w.tabbed > .modal-f {
+    flex-shrink: 0 !important;
+}
+
+/* ─── 7) BODY SCROLL LOCK — Daha güvenli ──────────────────── */
+body.modal-open {
+    overflow: hidden !important;
+}
+/* :has() destekleyen modern browser için */
+@supports selector(:has(*)) {
+    body:has(.modal-bd.show),
+    body:has(.modal-backdrop.show) {
+        overflow: hidden !important;
+    }
+}
+
+/* ─── 8) Mobile (≤700px) — Tam ekran modal ─────────────────── */
+@media (max-width: 700px) {
+    .modal-bd,
+    .modal-backdrop {
+        padding: 0 !important;
+        align-items: stretch !important;
+    }
+    .modal-bd.show,
+    .modal-backdrop.show {
+        align-items: stretch !important;
+    }
+    .modal-bd .modal-w,
+    .modal-backdrop .modal {
+        max-width: 100% !important;
+        max-height: 100vh !important;
+        height: 100vh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+    /* Tabbed modal mobilde: dikey layout */
+    .modal-bd .modal-tabs {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto 1fr !important;
+        min-height: 0 !important;
+    }
+    .modal-bd .modal-tabs-side {
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 8px 10px !important;
+        flex-shrink: 0 !important;
+    }
+    .modal-bd .modal-tab-btn {
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        width: auto !important;
+        padding: 7px 11px !important;
+        font-size: 12px !important;
+    }
+    .modal-bd .modal-tabs-content {
+        padding: 16px 18px !important;
+    }
+}
+
+/* ─── 9) Başvuru cevap paneli ──────────────────────────────── */
+.app-answers-panel {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border, rgba(255,255,255,0.08));
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 14px 0;
+}
+.app-answer-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
+}
+.app-answer-item:last-child { border-bottom: none; }
+.app-answer-item .q {
+    font-size: 11px;
+    color: var(--text-mute, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+.app-answer-item .a {
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.app-answer-item .a.empty {
+    color: var(--text-mute, #94a3b8);
+    font-style: italic;
+}
+
+/* ─── 10) Dispatch sahiplenme rozetleri ────────────────────── */
+.disp-owner-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border, rgba(255,255,255,0.08));
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+/* ─── 11) Toplu temizleme banner'ı ─────────────────────────── */
+.bulk-cleanup-banner {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-left: 3px solid #fbbf24;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.bulk-cleanup-banner .info {
+    font-size: 13px;
+    color: var(--text, #e2e8f0);
+    flex: 1;
+}
+.bulk-cleanup-banner .info strong { color: #fbbf24; }
+.bulk-cleanup-banner button {
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.bulk-cleanup-banner button:hover {
+    background: rgba(239,68,68,0.25);
+    border-color: rgba(239,68,68,0.5);
+}
+
+/* ─── 12) Anonim değerlendirme rozeti ──────────────────────── */
+.review-anonymous {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--text-mute, #94a3b8);
+    font-style: italic;
+}

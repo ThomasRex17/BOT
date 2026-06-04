@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mesai Yedek Raporu · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ─── Genel sayfa düzeni ────────────────────────────────── */
+.mr-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 28px 60px;
+}
+
+/* ─── Üst banner ────────────────────────────────────────── */
+.mr-banner {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+    animation: p1-fade-up var(--dur-slow) var(--ease-out) both;
+}
+.mr-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    opacity: 0.5;
+}
+
+.mr-banner-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.mr-banner-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.mr-banner-title .pill {
+    display: inline-block;
+    background: var(--primary-soft);
+    color: var(--primary-light);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border: 1px solid var(--border-strong);
+}
+.mr-banner-title h1 {
+    margin: 0;
+    font-size: 22px;
+    color: #fff;
+    font-weight: 700;
+}
+
+.mr-bot-badge {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 200px;
+}
+.mr-bot-badge .icon {
+    width: 36px; height: 36px;
+    background: var(--primary);
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.mr-bot-badge .text { line-height: 1.3; }
+.mr-bot-badge .name { font-size: 13px; font-weight: 700; color: #fff; }
+.mr-bot-badge .desc { font-size: 10px; color: var(--text-mute); }
+.mr-bot-badge .footer-text { font-size: 9px; color: var(--text-dim); font-style: italic; margin-top: 2px; }
+
+.mr-banner-desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 0 0 14px;
+    max-width: 720px;
+}
+
+.mr-meta {
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 8px 8px;
+    padding: 12px 0 0;
+    margin-top: 14px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 12px;
+}
+.mr-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-mute);
+}
+.mr-meta-item .label { color: var(--text-mute); }
+.mr-meta-item .value { color: #fff; font-weight: 600; }
+.mr-meta-item .id-chip {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'Courier New', monospace;
+}
+.mr-meta-item .dept-icon {
+    width: 22px; height: 22px;
+    background: var(--bg-3);
+    border-radius: 6px;
+    display: inline-grid;
+    place-items: center;
+    font-size: 12px;
+}
+
+/* ─── Tab nav ───────────────────────────────────────────── */
+.mr-tabs {
+    display: inline-flex;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 5px;
+    gap: 2px;
+    margin-bottom: 20px;
+}
+.mr-tab {
+    padding: 9px 18px;
+    background: transparent;
+    border: none;
+    color: var(--text-mute);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all var(--dur-base) var(--ease-out);
+    font-family: inherit;
+}
+.mr-tab:hover { color: #fff; }
+.mr-tab.active {
+    background: var(--bg-3);
+    color: #fff;
+    box-shadow: 0 1px 0 var(--border-strong) inset;
+}
+
+.mr-tabs-content > [data-pane]:not(.active) { display: none; }
+.mr-tabs-content > [data-pane].active {
+    animation: panel-fade-in var(--dur-base) var(--ease-out) both;
+}
+@keyframes panel-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Özet metric kartları ──────────────────────────────── */
+.mr-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.mr-stat {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+    animation: p1-fade-up var(--dur-slow) var(--ease-out) both;
+}
+.mr-stat:nth-child(1) { animation-delay: 80ms; }
+.mr-stat:nth-child(2) { animation-delay: 140ms; }
+.mr-stat:nth-child(3) { animation-delay: 200ms; }
+.mr-stat:nth-child(4) { animation-delay: 260ms; }
+.mr-stat:nth-child(5) { animation-delay: 320ms; }
+.mr-stat:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+}
+.mr-stat .label {
+    font-size: 10px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.mr-stat .value {
+    font-size: 30px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.mr-stat .value .frac {
+    color: var(--text-mute);
+    font-weight: 500;
+    font-size: 22px;
+}
+.mr-stat .sub {
+    font-size: 11px;
+    color: var(--text-mute);
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+/* ─── SHA-256 kutusu ────────────────────────────────────── */
+.mr-sha {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    animation: p1-fade-up var(--dur-slow) 360ms var(--ease-out) both;
+}
+.mr-sha .label {
+    font-size: 10px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.mr-sha .hash {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #fff;
+    word-break: break-all;
+    line-height: 1.5;
+    padding: 8px 12px;
+    background: var(--bg-3);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color var(--dur-base) var(--ease-out);
+}
+.mr-sha .hash:hover { border-color: var(--border-strong); }
+.mr-sha .desc {
+    font-size: 11px;
+    color: var(--text-mute);
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+/* ─── Bilgilendirme banner ──────────────────────────────── */
+.mr-info-banner {
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-left: 3px solid #60a5fa;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 22px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.55;
+    animation: p1-fade-up var(--dur-slow) 420ms var(--ease-out) both;
+}
+.mr-info-banner strong { color: #93c5fd; }
+
+/* ─── Section başlığı ───────────────────────────────────── */
+.mr-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 28px 0 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.mr-section-head h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mr-section-head .pill-count {
+    background: var(--primary-soft);
+    border: 1px solid var(--border-strong);
+    color: var(--primary-light);
+    padding: 3px 11px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ─── Chart grid'i ──────────────────────────────────────── */
+.mr-chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+}
+@media (max-width: 1100px) { .mr-chart-grid { grid-template-columns: 1fr; } }
+
+.mr-chart-card {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    overflow: hidden;
+}
+.mr-chart-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 14px;
+}
+.mr-chart-canvas-wrap {
+    position: relative;
+    height: 260px;
+}
+
+/* ─── Kayıt tablosu ─────────────────────────────────────── */
+.mr-table-wrap {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.mr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.mr-table th {
+    background: rgba(0,0,0,0.5);
+    color: var(--text-mute);
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+}
+.mr-table th.right { text-align: right; }
+.mr-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+.mr-table td.right { text-align: right; }
+.mr-table tr:last-child td { border-bottom: none; }
+.mr-table tbody tr {
+    transition: background var(--dur-fast) var(--ease-out);
+}
+.mr-table tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+.mr-table .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+}
+.mr-table .rank-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--dot-color, var(--text-mute));
+}
+.mr-table .hours-cell {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: #fff;
+}
+.mr-table .unit-pill {
+    display: inline-block;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-right: 4px;
+    margin-bottom: 2px;
+}
+
+/* ─── Hata / boş durum ──────────────────────────────────── */
+.mr-empty {
+    background: rgba(0,0,0,0.4);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 60px 30px;
+    text-align: center;
+    color: var(--text-mute);
+}
+.mr-empty .icon { font-size: 56px; margin-bottom: 14px; opacity: 0.5; }
+.mr-empty h3 { color: #fff; margin: 0 0 8px; font-size: 18px; }
+.mr-empty p { margin: 0; font-size: 13px; line-height: 1.6; }
+
+/* ─── Action buttons ────────────────────────────────────── */
+.mr-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+.mr-action-btn {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+}
+.mr-action-btn:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--border-strong);
+}
+
+/* Print styles — tüm raporu kağıda dökebilirsin */
+@media print {
+    .mr-tabs, .mr-actions, .dash-sidebar, #topBarContainer { display: none !important; }
+    .mr-tabs-content > [data-pane] { display: block !important; page-break-inside: avoid; }
+    .mr-chart-grid { grid-template-columns: 1fr 1fr; }
+    body { background: #fff !important; color: #000 !important; }
+}
+
+/* Skeleton */
+.mr-skel {
+    background: linear-gradient(90deg,
+        rgba(255,255,255,0.06) 0%,
+        rgba(255,255,255,0.14) 50%,
+        rgba(255,255,255,0.06) 100%);
+    background-size: 200% 100%;
+    animation: p1-shimmer 1.4s infinite linear;
+    border-radius: 4px;
+}
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="mr-wrap" id="reportRoot">
+            <!-- İçerik JS ile render edilir -->
+            <div class="mr-banner">
+                <div class="mr-banner-head">
+                    <div style="flex: 1;">
+                        <div class="mr-banner-title">
+                            <span class="pill">KATESHİ</span>
+                            <h1>Mesai yedek raporu</h1>
+                        </div>
+                    </div>
+                </div>
+                <p class="mr-banner-desc">Yükleniyor...</p>
+            </div>
+            
+            <div class="mr-stats">
+                <div class="mr-stat"><div class="label">YEDEKLENEN KİŞİ</div><div class="mr-skel" style="height: 30px; width: 80px; margin-bottom: 8px;"></div><div class="mr-skel" style="height: 11px; width: 60%;"></div></div>
+                <div class="mr-stat"><div class="label">TOPLAM MESAİ</div><div class="mr-skel" style="height: 30px; width: 90px; margin-bottom: 8px;"></div><div class="mr-skel" style="height: 11px; width: 60%;"></div></div>
+                <div class="mr-stat"><div class="label">MESAİDE (ANLIK)</div><div class="mr-skel" style="height: 30px; width: 40px; margin-bottom: 8px;"></div><div class="mr-skel" style="height: 11px; width: 60%;"></div></div>
+                <div class="mr-stat"><div class="label">PROFİL EŞLEŞTİ</div><div class="mr-skel" style="height: 30px; width: 70px; margin-bottom: 8px;"></div><div class="mr-skel" style="height: 11px; width: 60%;"></div></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.require(PERM.PAGE_STATS || PERM.PAGE_DUTY)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('stats');
+
+// URL'den ?id={reportId} oku — yoksa son raporu çek
+const urlParams = new URLSearchParams(window.location.search);
+const reportId = urlParams.get('id');
+
+// Chart.js varsayılanları
+Chart.defaults.color = '#888';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = 'inherit';
+Chart.defaults.animation.duration = 700;
+Chart.defaults.animation.easing = 'easeOutQuart';
+
+const charts = {};
+function destroyAllCharts() {
+    Object.values(charts).forEach(c => c.destroy && c.destroy());
+    Object.keys(charts).forEach(k => delete charts[k]);
+}
+
+// SHA-256 hesapla (Web Crypto API)
+async function sha256(text) {
+    const buf = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+async function loadReport() {
+    try {
+        // Backend kontratı: /api/duty/reset-reports[/:id]
+        const url = reportId
+            ? `/duty/reset-reports/${reportId}`
+            : '/duty/reset-reports/latest';
+        const res = await api.get(url);
+        const report = res.data;
+        if (!report) {
+            renderEmpty('Henüz mesai yedek raporu oluşturulmamış');
+            return;
+        }
+        renderReport(report);
+    } catch (err) {
+        renderEmpty('Rapor yüklenemedi: ' + (err.message || 'Sunucu hatası'));
+    }
+}
+
+function renderEmpty(msg) {
+    document.getElementById('reportRoot').innerHTML = `
+        <div class="mr-empty">
+            <div class="icon">📊</div>
+            <h3>Mesai Yedek Raporu</h3>
+            <p>${escapeHtml(msg)}</p>
+            <p style="margin-top: 16px; font-size: 11px;">
+                Rapor, mesai sıfırlandığında otomatik üretilir ve Discord'a gönderilir.
+            </p>
+        </div>
+    `;
+}
+
+function renderReport(r) {
+    const root = document.getElementById('reportRoot');
+    
+    // Hesaplar
+    const totalHours = (r.total_minutes || 0) / 60;
+    const activeNow = r.active_now_count || 0;
+    const profileMatched = r.profile_matched_count || 0;
+    const totalUsers = r.users ? r.users.length : 0;
+    const unitsCount = r.unit_summary ? Object.keys(r.unit_summary).length : 0;
+    const unitsOverHour = r.unit_summary
+        ? Object.values(r.unit_summary).filter(u => u.total_hours >= 1).length
+        : 0;
+    
+    const fmtDate = d => d ? new Date(d).toLocaleString('tr-TR', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }) : '—';
+    
+    const fmtHours = h => {
+        if (h == null) return '0';
+        const hrs = Math.floor(h);
+        const mins = Math.round((h - hrs) * 60);
+        if (hrs === 0) return `${mins} dk`;
+        return `${hrs.toFixed(0)}sa ${mins}dk`;
+    };
+    
+    root.innerHTML = `
+        <!-- BANNER -->
+        <div class="mr-banner">
+            <div class="mr-banner-head">
+                <div style="flex: 1;">
+                    <div class="mr-banner-title">
+                        <span class="pill">KATESHİ</span>
+                        <h1>Mesai yedek raporu</h1>
+                    </div>
+                </div>
+                <div class="mr-bot-badge">
+                    <div class="icon">🤖</div>
+                    <div class="text">
+                        <div class="name">KATESHİ BOTS</div>
+                        <div class="desc">Resmi mesai yedek çıktısı</div>
+                        <div class="footer-text">Kateshi tarafından oluşturuldu</div>
+                    </div>
+                </div>
+            </div>
+            <p class="mr-banner-desc">
+                Bu sayfa sıfırlama öncesi mesai verilerinin özetini, departman dağılımını ve kullanıcı satırlarını içerir.
+                Grafikler için internet bağlantısı gerekir.
+            </p>
+            <div class="mr-meta">
+                <div class="mr-meta-item">
+                    <span class="dept-icon">🏛️</span>
+                    <span class="label">Sunucu:</span>
+                    <span class="value">${escapeHtml(r.guild_name || 'MRPD')} ${r.guild_short ? `[${escapeHtml(r.guild_short)}]` : ''}</span>
+                    ${r.guild_id ? `<span class="id-chip">${escapeHtml(r.guild_id)}</span>` : ''}
+                </div>
+                <div class="mr-meta-item">
+                    <span class="label">İşlemi yapan:</span>
+                    <span class="value">${escapeHtml(r.actor_name || 'Sistem')} ${r.actor_discord ? `(${escapeHtml(r.actor_discord)})` : ''}</span>
+                    ${r.actor_id ? `<span class="id-chip">${escapeHtml(r.actor_id)}</span>` : ''}
+                </div>
+                <div class="mr-meta-item">
+                    <span class="label">Oluşturulma:</span>
+                    <span class="value">${fmtDate(r.created_at)}</span>
+                </div>
+                <div class="mr-meta-item">
+                    <span class="label">Kayıt:</span>
+                    <span class="value">${totalUsers}</span>
+                </div>
+                <div class="mr-meta-item">
+                    <span class="label">Toplam:</span>
+                    <span class="value">${totalHours.toFixed(2)} saat</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ACTION BUTTONS -->
+        <div class="mr-actions">
+            <button class="mr-action-btn" onclick="window.print()" title="Sayfayı yazdır">🖨️ Yazdır</button>
+            <button class="mr-action-btn" onclick="copyShaToClipboard()" title="SHA-256 hash'ini kopyala">📋 SHA-256'yı kopyala</button>
+            <a class="mr-action-btn" href="/duty.html" style="text-decoration: none;">📊 Mesaiye dön</a>
+        </div>
+        
+        <!-- TABS -->
+        <div class="mr-tabs">
+            <button class="mr-tab active" data-tab="summary">Özet</button>
+            <button class="mr-tab" data-tab="charts">Grafikler</button>
+            <button class="mr-tab" data-tab="table">Kayıt tablosu</button>
+        </div>
+        
+        <div class="mr-tabs-content">
+            <!-- ÖZET PANE -->
+            <div data-pane="summary" class="active">
+                <div class="mr-stats">
+                    <div class="mr-stat">
+                        <div class="label">YEDEKLENEN KİŞİ</div>
+                        <div class="value">${totalUsers}</div>
+                        <div class="sub">Mesai verisi taşıyan satır</div>
+                    </div>
+                    <div class="mr-stat">
+                        <div class="label">TOPLAM MESAİ</div>
+                        <div class="value">${totalHours.toFixed(2)}</div>
+                        <div class="sub">Saat (tablo toplamı)</div>
+                    </div>
+                    <div class="mr-stat">
+                        <div class="label">MESAİDE (ANLIK)</div>
+                        <div class="value">${activeNow}</div>
+                        <div class="sub">Sıfırlama anında aktif</div>
+                    </div>
+                    <div class="mr-stat">
+                        <div class="label">PROFİL EŞLEŞTİ</div>
+                        <div class="value">${profileMatched}<span class="frac"> / ${totalUsers}</span></div>
+                        <div class="sub">Discord üye bilgisi</div>
+                    </div>
+                    <div class="mr-stat">
+                        <div class="label">İŞLEM YAPILAN BİRİM</div>
+                        <div class="value">${unitsOverHour}<span class="frac"> / ${unitsCount}</span></div>
+                        <div class="sub">Toplam mesaisi 1 saati aşan birim sayısı</div>
+                    </div>
+                </div>
+                
+                <!-- SHA-256 KUTUSU -->
+                <div class="mr-sha">
+                    <div class="label">SHA-256 (BÜTÜNLÜK)</div>
+                    <div class="hash" id="shaHash" onclick="copyShaToClipboard()">${escapeHtml(r.sha256 || '— hesaplanıyor —')}</div>
+                    <div class="desc">
+                        Dosya değiştiyse bu kod tutmaz. Doğrulama: bu 64 karakteri silin; kalan dosyanın UTF-8 SHA-256 özeti aynı olmalı.
+                    </div>
+                </div>
+                
+                <div class="mr-info-banner">
+                    <strong>Grafikler:</strong> ${r.unit_legend || 'Birimlerdeki üyelerin toplam mesaisi ile o an mesaide sayıları.'} <strong>Atanmamış:</strong> hiçbir birimde kayıtlı olmayan kullanıcılar.
+                </div>
+                
+                ${r.unit_summary && Object.keys(r.unit_summary).length ? renderUnitGrid(r.unit_summary) : ''}
+            </div>
+            
+            <!-- GRAFİKLER PANE -->
+            <div data-pane="charts">
+                <div class="mr-section-head">
+                    <h2>📊 Departman grafikleri</h2>
+                    <span class="pill-count">${unitsCount} kategori</span>
+                </div>
+                <div class="mr-chart-grid">
+                    <div class="mr-chart-card">
+                        <div class="mr-chart-title">Departman — toplam mesai (saat)</div>
+                        <div class="mr-chart-canvas-wrap"><canvas id="chDeptBar"></canvas></div>
+                    </div>
+                    <div class="mr-chart-card">
+                        <div class="mr-chart-title">Departman — dağılım (%)</div>
+                        <div class="mr-chart-canvas-wrap"><canvas id="chDeptPie"></canvas></div>
+                    </div>
+                    <div class="mr-chart-card">
+                        <div class="mr-chart-title">Departman — aktif (mesaide) sayısı</div>
+                        <div class="mr-chart-canvas-wrap"><canvas id="chDeptActive"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- KAYIT TABLOSU PANE -->
+            <div data-pane="table">
+                <div class="mr-section-head">
+                    <h2>👥 Kullanıcı kayıtları</h2>
+                    <span class="pill-count">${totalUsers} kayıt</span>
+                </div>
+                <div class="mr-table-wrap">
+                    <table class="mr-table">
+                        <thead>
+                            <tr>
+                                <th>Personel</th>
+                                <th>Rütbe</th>
+                                <th>Birimler</th>
+                                <th class="right">Mesai (saat)</th>
+                                <th class="right">Mesaide?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${r.users && r.users.length ? r.users.map(u => `
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 700; color: #fff;">${escapeHtml(u.name || u.discord_username || 'Bilinmeyen')}</div>
+                                        ${u.callsign ? `<div style="font-size: 11px; color: var(--text-mute);">#${escapeHtml(u.callsign)}</div>` : ''}
+                                    </td>
+                                    <td>${u.rank_name ? `<span class="rank-badge"><span class="rank-dot" style="--dot-color: ${u.rank_color || '#94a3b8'};"></span>${escapeHtml(u.rank_name)}</span>` : '<span style="color: var(--text-mute); font-size: 12px;">—</span>'}</td>
+                                    <td>${u.units && u.units.length
+                                        ? u.units.map(un => `<span class="unit-pill">${escapeHtml(un)}</span>`).join('')
+                                        : '<span style="color: var(--text-mute); font-size: 12px;">—</span>'}</td>
+                                    <td class="right hours-cell">${fmtHours((u.total_minutes || 0) / 60)}</td>
+                                    <td class="right">${u.is_active
+                                        ? '<span style="color: #4ade80; font-size: 16px;" title="Mesaide">●</span>'
+                                        : '<span style="color: var(--text-mute); font-size: 16px;" title="Çevrimdışı">○</span>'}</td>
+                                </tr>
+                            `).join('') : `<tr><td colspan="5" style="text-align: center; padding: 30px; color: var(--text-mute);">Kayıt yok</td></tr>`}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Tab geçişlerini bağla
+    document.querySelectorAll('.mr-tab').forEach(t => {
+        t.addEventListener('click', () => {
+            document.querySelectorAll('.mr-tab').forEach(x => x.classList.remove('active'));
+            t.classList.add('active');
+            document.querySelectorAll('.mr-tabs-content [data-pane]').forEach(p => p.classList.remove('active'));
+            document.querySelector(`.mr-tabs-content [data-pane="${t.dataset.tab}"]`).classList.add('active');
+            // Chart pane açılınca chartları çiz (lazy)
+            if (t.dataset.tab === 'charts' && !charts.deptBar) drawCharts(r);
+        });
+    });
+    
+    // SHA-256 yoksa kendimiz hesaplayalım (canlı sayfada)
+    if (!r.sha256) {
+        const payload = JSON.stringify({ ...r, sha256: undefined });
+        sha256(payload).then(h => {
+            const el = document.getElementById('shaHash');
+            if (el) el.textContent = h;
+        });
+    }
+}
+
+function renderUnitGrid(unitSummary) {
+    const units = Object.entries(unitSummary).map(([name, data]) => ({
+        name,
+        total_hours: data.total_hours || 0,
+        active: data.active || 0,
+        member_count: data.member_count || 0,
+    })).sort((a, b) => b.total_hours - a.total_hours);
+    
+    if (!units.length) return '';
+    
+    return `
+        <div class="mr-section-head" style="margin-top: 22px;">
+            <h2>🏢 Birim özetleri</h2>
+            <span class="pill-count">${units.length} birim</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
+            ${units.map(u => `
+                <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;">
+                    <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px;">${escapeHtml(u.name)}</div>
+                    <div style="font-size: 20px; font-weight: 800; color: var(--primary-light); font-variant-numeric: tabular-nums; margin-bottom: 4px;">${u.total_hours.toFixed(1)}<span style="font-size: 12px; color: var(--text-mute); font-weight: 500;"> sa</span></div>
+                    <div style="font-size: 11px; color: var(--text-mute); display: flex; justify-content: space-between;">
+                        <span>${u.member_count} üye</span>
+                        ${u.active > 0 ? `<span style="color: #4ade80;">● ${u.active} mesaide</span>` : ''}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function drawCharts(r) {
+    const unitSummary = r.unit_summary || {};
+    const units = Object.entries(unitSummary).map(([name, d]) => ({
+        name,
+        hours: d.total_hours || 0,
+        active: d.active || 0,
+        members: d.member_count || 0,
+    })).sort((a, b) => b.hours - a.hours);
+    
+    if (!units.length) return;
+    
+    const colors = ['#a855f7', '#3b82f6', '#f59e0b', '#ef4444', '#22c55e', '#06b6d4', '#ec4899', '#84cc16', '#eab308', '#94a3b8'];
+    const labels = units.map(u => u.name);
+    
+    // Bar chart — toplam saat
+    charts.deptBar = new Chart(document.getElementById('chDeptBar'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                data: units.map(u => u.hours),
+                backgroundColor: units.map((_, i) => colors[i % colors.length] + 'b0'),
+                borderColor: units.map((_, i) => colors[i % colors.length]),
+                borderWidth: 1.5,
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', cornerRadius: 6, callbacks: { label: ctx => `${ctx.formattedValue} saat` } } },
+            scales: {
+                y: { ticks: { callback: v => v + ' sa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0 }, grid: { display: false } },
+            },
+        },
+    });
+    
+    // Doughnut — dağılım
+    charts.deptPie = new Chart(document.getElementById('chDeptPie'), {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: units.map(u => u.hours),
+                backgroundColor: units.map((_, i) => colors[i % colors.length]),
+                borderColor: 'rgba(0,0,0,0.4)',
+                borderWidth: 2,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8, font: { size: 10 }, color: '#aaa' } },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    cornerRadius: 6,
+                    callbacks: {
+                        label: ctx => {
+                            const total = units.reduce((s, u) => s + u.hours, 0);
+                            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                            return `${ctx.label}: ${ctx.formattedValue} sa (%${pct})`;
+                        }
+                    }
+                }
+            },
+        },
+    });
+    
+    // Active count
+    charts.deptActive = new Chart(document.getElementById('chDeptActive'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Toplam üye', data: units.map(u => u.members), backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 4 },
+                { label: 'Mesaide',    data: units.map(u => u.active),  backgroundColor: '#22c55e', borderRadius: 4 },
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { position: 'top', labels: { color: '#aaa', boxWidth: 12, font: { size: 10 } } }, tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', cornerRadius: 6 } },
+            scales: {
+                x: { stacked: false, beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { stacked: false, grid: { display: false }, ticks: { font: { size: 10 } } },
+            },
+        },
+    });
+}
+
+function copyShaToClipboard() {
+    const el = document.getElementById('shaHash');
+    if (!el) return;
+    const txt = el.textContent.trim();
+    if (!txt || txt.includes('—')) return;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt).then(() => showSuccess('SHA-256 panoya kopyalandı'));
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = txt;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); showSuccess('SHA-256 panoya kopyalandı'); } catch {}
+        ta.remove();
+    }
+}
+
+loadReport();
+</script>
+</body>
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>İstatistikler · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ─── Stats sayfa özel stiller ─────────────────────────────── */
+.stats-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+.stats-head h1 { margin: 0; color: #fff; font-size: 22px; font-weight: 700; }
+.stats-head .subtitle { color: var(--text-mute); margin: 4px 0 0; font-size: 12px; }
+
+/* "Dashboard'a Dön" butonu — Kateshi tarzı */
+.stats-back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all var(--dur-base, 240ms) var(--ease-out, cubic-bezier(0.16,1,0.3,1));
+    cursor: pointer;
+}
+.stats-back-btn:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+}
+
+/* "CANLI VERİ" rozeti */
+.live-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: rgba(34,197,94,0.12);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 999px;
+    font-size: 11px; font-weight: 700; color: #86efac;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.live-badge::before {
+    content: ''; width: 7px; height: 7px;
+    background: #22c55e; border-radius: 50%;
+    animation: live-blink 1.4s infinite;
+    box-shadow: 0 0 6px #22c55e;
+}
+@keyframes live-blink {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+    70%      { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+}
+
+/* Period tabs (Haftalık / Aylık / Yıllık) */
+.period-tabs {
+    display: inline-flex;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 2px;
+}
+.period-tabs button {
+    padding: 7px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-mute);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all var(--dur-base, 240ms) var(--ease-out);
+    font-family: inherit;
+}
+.period-tabs button:hover { color: #fff; }
+.period-tabs button.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+/* Section başlıkları */
+.section-head { margin: 28px 0 14px; }
+.section-head h3 { color: #fff; margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+.section-head p { color: var(--text-mute); margin: 0; font-size: 12px; }
+
+/* ─── Metric kart — Kateshi'deki accent bar'lı ─────────────── */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+}
+.metric-card {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    display: flex; align-items: center; gap: 16px;
+    transition: transform var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    animation: p1-fade-up var(--dur-slow, 420ms) var(--ease-out, cubic-bezier(0.16,1,0.3,1)) forwards;
+}
+.metric-card:nth-child(1) { animation-delay: 60ms; }
+.metric-card:nth-child(2) { animation-delay: 130ms; }
+.metric-card:nth-child(3) { animation-delay: 200ms; }
+.metric-card:nth-child(4) { animation-delay: 270ms; }
+
+.metric-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md, 0 8px 24px rgba(0,0,0,0.35));
+}
+
+/* Sol kenarda renkli accent bar (her kart için farklı renk) */
+.metric-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent-color, var(--primary));
+    border-radius: 3px 0 0 3px;
+}
+
+.metric-card.accent-purple { --accent-color: #a855f7; }
+.metric-card.accent-blue   { --accent-color: #3b82f6; }
+.metric-card.accent-orange { --accent-color: #f59e0b; }
+.metric-card.accent-green  { --accent-color: #22c55e; }
+
+.metric-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    transition: transform var(--dur-base) var(--ease-spring, cubic-bezier(0.34,1.56,0.64,1));
+}
+.metric-card:hover .metric-icon { transform: scale(1.08) rotate(-3deg); }
+
+.metric-info { flex: 1; min-width: 0; }
+.metric-label { font-size: 11px; color: var(--text-mute); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.7px; }
+.metric-value { font-size: 24px; font-weight: 800; color: #fff; line-height: 1.1; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.metric-value .unit { font-size: 13px; color: var(--text-mute); font-weight: 500; margin-left: 4px; }
+.metric-change {
+    font-size: 11px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.metric-change.up      { color: #4ade80; background: rgba(34,197,94,0.1); }
+.metric-change.down    { color: #fca5a5; background: rgba(239,68,68,0.1); }
+.metric-change.neutral { color: var(--text-mute); background: rgba(255,255,255,0.04); }
+.metric-change::before {
+    content: attr(data-arrow);
+    font-weight: 700;
+}
+
+/* Skeleton (loading state) */
+.metric-card.loading {
+    pointer-events: none;
+}
+.metric-card.loading .metric-value,
+.metric-card.loading .metric-label,
+.metric-card.loading .metric-change {
+    background: linear-gradient(90deg,
+        rgba(255,255,255,0.06) 0%,
+        rgba(255,255,255,0.14) 50%,
+        rgba(255,255,255,0.06) 100%);
+    background-size: 200% 100%;
+    animation: p1-shimmer 1.4s infinite linear;
+    color: transparent !important;
+    border-radius: 4px;
+}
+.metric-card.loading .metric-value { height: 28px; width: 80px; }
+.metric-card.loading .metric-label { height: 12px; width: 100px; }
+.metric-card.loading .metric-change { height: 18px; width: 130px; }
+.metric-card.loading .metric-icon {
+    background: rgba(255,255,255,0.05) !important;
+    color: transparent;
+}
+
+/* ─── Chart kartları ───────────────────────────────────────── */
+.chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+@media (max-width: 980px) { .chart-grid { grid-template-columns: 1fr; } }
+
+.chart-3col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+@media (max-width: 1100px) { .chart-3col { grid-template-columns: 1fr; } }
+
+.chart-card {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    overflow: hidden;
+    opacity: 0;
+    animation: p1-fade-up var(--dur-slow) var(--ease-out) forwards;
+    transition: border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
+}
+.chart-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+}
+.chart-grid .chart-card:nth-child(1) { animation-delay: 380ms; }
+.chart-grid .chart-card:nth-child(2) { animation-delay: 460ms; }
+.chart-3col .chart-card:nth-child(1) { animation-delay: 540ms; }
+.chart-3col .chart-card:nth-child(2) { animation-delay: 620ms; }
+.chart-3col .chart-card:nth-child(3) { animation-delay: 700ms; }
+
+.chart-head { margin-bottom: 16px; }
+.chart-title { font-size: 14px; font-weight: 700; color: #fff; margin: 0 0 3px; }
+.chart-sub { font-size: 11px; color: var(--text-mute); margin: 0; }
+.chart-canvas-wrap { position: relative; height: 240px; }
+
+/* Chart skeleton — yüklenirken */
+.chart-canvas-wrap.loading::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+        rgba(255,255,255,0.04) 25%,
+        rgba(255,255,255,0.08) 50%,
+        rgba(255,255,255,0.04) 75%);
+    background-size: 200% 200%;
+    animation: p1-shimmer 1.6s infinite linear;
+    border-radius: 8px;
+}
+
+/* Chart hata durumu */
+.chart-error {
+    height: 240px;
+    display: grid;
+    place-items: center;
+    color: var(--text-mute);
+    font-size: 12px;
+    flex-direction: column;
+    gap: 8px;
+}
+.chart-error .icon { font-size: 32px; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <!-- Başlık + sağ blokta period tab + canlı + dön butonu -->
+        <div class="stats-head">
+            <div>
+                <a href="/index.html" class="stats-back-btn">← Dashboard'a Dön</a>
+                <h1 style="margin-top:14px;">📊 İstatistikler & Analiz</h1>
+                <p class="subtitle">Performans metrikleri ve trend analizleri</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <span class="live-badge">CANLI VERİ</span>
+                <div class="period-tabs" id="periodTabs">
+                    <button data-period="week">Haftalık</button>
+                    <button data-period="month" class="active">Aylık</button>
+                    <button data-period="year">Yıllık</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ÖZET METRİKLER -->
+        <div class="section-head">
+            <h3>Özet Metrikler</h3>
+            <p id="metricsSub">Bu ay ve geçen aya göre değişim oranları</p>
+        </div>
+        <div class="metric-grid" id="metricGrid">
+            <!-- Skeleton: 4 boş kart -->
+            <div class="metric-card accent-purple loading">
+                <div class="metric-icon"></div>
+                <div class="metric-info">
+                    <div class="metric-label"></div>
+                    <div class="metric-value"></div>
+                    <div class="metric-change"></div>
+                </div>
+            </div>
+            <div class="metric-card accent-blue loading">
+                <div class="metric-icon"></div>
+                <div class="metric-info">
+                    <div class="metric-label"></div>
+                    <div class="metric-value"></div>
+                    <div class="metric-change"></div>
+                </div>
+            </div>
+            <div class="metric-card accent-orange loading">
+                <div class="metric-icon"></div>
+                <div class="metric-info">
+                    <div class="metric-label"></div>
+                    <div class="metric-value"></div>
+                    <div class="metric-change"></div>
+                </div>
+            </div>
+            <div class="metric-card accent-green loading">
+                <div class="metric-icon"></div>
+                <div class="metric-info">
+                    <div class="metric-label"></div>
+                    <div class="metric-value"></div>
+                    <div class="metric-change"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- GRAFİKLER -->
+        <div class="section-head">
+            <h3>Grafikler</h3>
+            <p>Zaman içindeki değişim ve dağılımlar</p>
+        </div>
+        
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-head">
+                    <h4 class="chart-title" id="dutyTrendTitle">Mesai Trendi (Son 30 Gün)</h4>
+                    <p class="chart-sub">Her gün toplam çalışılan mesai saati</p>
+                </div>
+                <div class="chart-canvas-wrap loading" id="dutyTrendWrap"><canvas id="dutyTrendChart"></canvas></div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-head">
+                    <h4 class="chart-title">Aylık Rapor Sayısı (Son 6 Ay)</h4>
+                    <p class="chart-sub">Her ay oluşturulan rapor adedi</p>
+                </div>
+                <div class="chart-canvas-wrap loading" id="monthlyReportsWrap"><canvas id="monthlyReportsChart"></canvas></div>
+            </div>
+        </div>
+        
+        <div class="chart-3col">
+            <div class="chart-card">
+                <div class="chart-head">
+                    <h4 class="chart-title">Personel Sayısı (Son 6 Ay)</h4>
+                    <p class="chart-sub">Her ay sonu toplam kayıtlı personel</p>
+                </div>
+                <div class="chart-canvas-wrap loading" id="personnelTrendWrap"><canvas id="personnelTrendChart"></canvas></div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-head">
+                    <h4 class="chart-title">Birimlere Göre Personel</h4>
+                    <p class="chart-sub">Personelin birimlere dağılımı (oran)</p>
+                </div>
+                <div class="chart-canvas-wrap loading" id="unitDistWrap"><canvas id="unitDistChart"></canvas></div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-head">
+                    <h4 class="chart-title">Haftanın Günlerine Göre Mesai Girişi</h4>
+                    <p class="chart-sub">Son 4 haftada günlük mesai giriş sayısı (Pazar–Cumartesi)</p>
+                </div>
+                <div class="chart-canvas-wrap loading" id="weeklyDutyWrap"><canvas id="weeklyDutyChart"></canvas></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* yönlendirildi */ }
+if (!Perms.require(PERM.PAGE_STATS)) { /* yönlendirildi */ }
+
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('stats');
+
+// Chart.js global defaults
+Chart.defaults.color = '#888';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = 'inherit';
+Chart.defaults.animation.duration = 800;
+Chart.defaults.animation.easing = 'easeOutQuart';
+
+const charts = {};
+let currentPeriod = 'month'; // 'week' | 'month' | 'year'
+
+function destroyChart(key) {
+    if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+
+// ─── Count-up animasyonu ───────────────────────────────────
+// Metric kartlardaki değerleri 0'dan hedefe smooth getir.
+function countUpInto(el, target, opts = {}) {
+    if (!el) return;
+    const duration = opts.duration || 900;
+    const suffix = opts.suffix ? `<span class="unit">${opts.suffix}</span>` : '';
+    const isFloat = opts.decimals && opts.decimals > 0;
+    const start = performance.now();
+    function tick(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const val = isFloat
+            ? (target * eased).toFixed(opts.decimals)
+            : Math.round(target * eased);
+        el.innerHTML = `${val}${suffix}`;
+        if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+function fmtChange(pct) {
+    if (pct === 0 || pct == null || isNaN(pct))
+        return { cls: 'neutral', arrow: '—', text: '%0 değişim geçen aya göre' };
+    if (pct > 0)
+        return { cls: 'up', arrow: '▲', text: `%${Math.abs(pct).toFixed(1)} artış geçen aya göre` };
+    return { cls: 'down', arrow: '▼', text: `%${Math.abs(pct).toFixed(1)} düşüş geçen aya göre` };
+}
+
+function renderMetrics(o) {
+    const cards = [
+        {
+            cls: 'accent-purple', icon: '👥', iconBg: 'linear-gradient(135deg,#a855f7,#7c3aed)',
+            label: 'Toplam Personel', value: o.totalPersonnel, unit: 'kişi',
+            change: o.pplChange,
+        },
+        {
+            cls: 'accent-blue', icon: '⏱️', iconBg: 'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+            label: 'Bu Ay Toplam Mesai', value: o.dutyHours, unit: 'saat',
+            change: o.dutyChange, decimals: 1,
+        },
+        {
+            cls: 'accent-orange', icon: '📄', iconBg: 'linear-gradient(135deg,#f59e0b,#d97706)',
+            label: 'Bu Ay Doldurulan Rapor', value: o.reportsCount, unit: 'rapor',
+            change: o.reportChange,
+        },
+        {
+            cls: 'accent-green', icon: '🏛️', iconBg: 'linear-gradient(135deg,#22c55e,#15803d)',
+            label: 'Toplam Vatandaş Kaydı', value: o.totalCitizens, unit: 'kayıt',
+            change: o.citChange,
+        },
+    ];
+    
+    const grid = document.getElementById('metricGrid');
+    grid.innerHTML = cards.map(c => {
+        const ch = fmtChange(c.change);
+        return `
+            <div class="metric-card ${c.cls}">
+                <div class="metric-icon" style="background:${c.iconBg};">${c.icon}</div>
+                <div class="metric-info">
+                    <div class="metric-label">${c.label}</div>
+                    <div class="metric-value" data-target="${c.value}" data-suffix="${c.unit}" data-decimals="${c.decimals||0}">0 <span class="unit">${c.unit}</span></div>
+                    <div class="metric-change ${ch.cls}" data-arrow="${ch.arrow}">${ch.text}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Count-up animasyonu başlat
+    grid.querySelectorAll('.metric-value').forEach(el => {
+        const target = parseFloat(el.dataset.target) || 0;
+        const suffix = el.dataset.suffix || '';
+        const decimals = parseInt(el.dataset.decimals) || 0;
+        countUpInto(el, target, { suffix, decimals });
+    });
+}
+
+function renderDutyTrend(data) {
+    destroyChart('dutyTrend');
+    document.getElementById('dutyTrendWrap').classList.remove('loading');
+    if (!data || !data.length) {
+        document.getElementById('dutyTrendWrap').innerHTML = '<div class="chart-error"><div class="icon">📊</div><div>Yeterli veri yok</div></div>';
+        return;
+    }
+    const ctx = document.getElementById('dutyTrendChart').getContext('2d');
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, 240);
+    grad.addColorStop(0, 'rgba(255,255,255,0.20)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    
+    charts.dutyTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(d => d.label),
+            datasets: [{
+                data: data.map(d => d.value),
+                borderColor: '#fff',
+                backgroundColor: grad,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#fff',
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 8,
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    callbacks: {
+                        label: ctx => `${ctx.formattedValue} saat`,
+                    },
+                },
+            },
+            scales: {
+                y: { ticks: { callback: v => v + ' sa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
+            },
+        },
+    });
+}
+
+function renderMonthlyReports(data) {
+    destroyChart('monthlyReports');
+    document.getElementById('monthlyReportsWrap').classList.remove('loading');
+    if (!data || !data.length) {
+        document.getElementById('monthlyReportsWrap').innerHTML = '<div class="chart-error"><div class="icon">📄</div><div>Yeterli veri yok</div></div>';
+        return;
+    }
+    const ctx = document.getElementById('monthlyReportsChart').getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 240);
+    grad.addColorStop(0, 'rgba(245,158,11,0.30)');
+    grad.addColorStop(1, 'rgba(245,158,11,0)');
+    
+    charts.monthlyReports = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(d => d.label),
+            datasets: [{
+                data: data.map(d => d.value),
+                borderColor: '#f59e0b',
+                backgroundColor: grad,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#f59e0b',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 1,
+                borderWidth: 2.5,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', cornerRadius: 8 },
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                x: { grid: { display: false } },
+            },
+        },
+    });
+}
+
+function renderPersonnelTrend(data) {
+    destroyChart('personnelTrend');
+    document.getElementById('personnelTrendWrap').classList.remove('loading');
+    if (!data || !data.length) {
+        document.getElementById('personnelTrendWrap').innerHTML = '<div class="chart-error"><div class="icon">📈</div><div>Yeterli veri yok</div></div>';
+        return;
+    }
+    const ctx = document.getElementById('personnelTrendChart').getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 240);
+    grad.addColorStop(0, 'rgba(34,197,94,0.30)');
+    grad.addColorStop(1, 'rgba(34,197,94,0)');
+    
+    charts.personnelTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(d => d.label),
+            datasets: [{
+                data: data.map(d => d.value),
+                borderColor: '#22c55e',
+                backgroundColor: grad,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#22c55e',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 1,
+                borderWidth: 2.5,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', cornerRadius: 8 },
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                x: { grid: { display: false } },
+            },
+        },
+    });
+}
+
+function renderUnitDist(data) {
+    destroyChart('unitDist');
+    document.getElementById('unitDistWrap').classList.remove('loading');
+    if (!data || !data.length) {
+        document.getElementById('unitDistWrap').innerHTML = '<div class="chart-error"><div class="icon">🏢</div><div>Yeterli veri yok</div></div>';
+        return;
+    }
+    const colors = ['#a855f7', '#3b82f6', '#f59e0b', '#ef4444', '#22c55e', '#06b6d4', '#ec4899', '#84cc16'];
+    const ctx = document.getElementById('unitDistChart').getContext('2d');
+    
+    charts.unitDist = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.map(d => d.label),
+            datasets: [{
+                data: data.map(d => d.value),
+                backgroundColor: data.map((_, i) => colors[i % colors.length]),
+                borderWidth: 2,
+                borderColor: 'rgba(0,0,0,0.4)',
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 10, padding: 10, font: { size: 10 }, color: '#aaa' },
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: ctx => {
+                            const item = data[ctx.dataIndex];
+                            return `${item.label}: ${item.value} (%${item.percent})`;
+                        }
+                    }
+                }
+            },
+        },
+    });
+}
+
+function renderWeeklyDuty(data) {
+    destroyChart('weeklyDuty');
+    document.getElementById('weeklyDutyWrap').classList.remove('loading');
+    if (!data || !data.length) {
+        document.getElementById('weeklyDutyWrap').innerHTML = '<div class="chart-error"><div class="icon">📅</div><div>Yeterli veri yok</div></div>';
+        return;
+    }
+    const ctx = document.getElementById('weeklyDutyChart').getContext('2d');
+    
+    charts.weeklyDuty = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: data.map(d => d.label),
+            datasets: [{
+                data: data.map(d => d.value),
+                borderColor: '#a855f7',
+                backgroundColor: 'rgba(168,85,247,0.18)',
+                pointBackgroundColor: '#a855f7',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 1,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', cornerRadius: 8 },
+            },
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(255,255,255,0.08)' },
+                    grid: { color: 'rgba(255,255,255,0.06)' },
+                    beginAtZero: true,
+                    ticks: {
+                        display: true,
+                        color: '#666',
+                        backdropColor: 'transparent',
+                        font: { size: 9 },
+                    },
+                    pointLabels: { color: '#bbb', font: { size: 11, weight: 600 } },
+                }
+            },
+        },
+    });
+}
+
+// ─── Period değişikliği ────────────────────────────────────
+// Tab değişince başlığı güncelle ve loadStats'ı period ile yeniden çağır.
+const PERIOD_LABELS = {
+    week: { metricsSub: 'Bu hafta ve geçen haftaya göre değişim oranları', dutyTitle: 'Mesai Trendi (Son 7 Gün)' },
+    month: { metricsSub: 'Bu ay ve geçen aya göre değişim oranları', dutyTitle: 'Mesai Trendi (Son 30 Gün)' },
+    year: { metricsSub: 'Bu yıl ve geçen yıla göre değişim oranları', dutyTitle: 'Mesai Trendi (Son 12 Ay)' },
+};
+document.getElementById('periodTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-period]');
+    if (!btn || btn.classList.contains('active')) return;
+    document.querySelectorAll('#periodTabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPeriod = btn.dataset.period;
+    const labels = PERIOD_LABELS[currentPeriod];
+    document.getElementById('metricsSub').textContent = labels.metricsSub;
+    document.getElementById('dutyTrendTitle').textContent = labels.dutyTitle;
+    // Skeleton'ı geri getir
+    ['dutyTrendWrap','monthlyReportsWrap','personnelTrendWrap','unitDistWrap','weeklyDutyWrap']
+        .forEach(id => document.getElementById(id).classList.add('loading'));
+    loadStats();
+});
+
+async function loadStats() {
+    try {
+        const res = await api.get(`/stats/dashboard?period=${currentPeriod}`);
+        const d = res.data || {};
+        
+        renderMetrics(d.overview || {});
+        renderDutyTrend(d.dutyTrend || []);
+        renderMonthlyReports(d.monthlyReports || []);
+        renderPersonnelTrend(d.personnelTrend || []);
+        renderUnitDist(d.unitDist || []);
+        renderWeeklyDuty(d.weeklyDuty || []);
+    } catch (err) {
+        if (typeof showError === 'function') {
+            showError('İstatistikler yüklenemedi: ' + (err.message || 'Sunucu hatası'));
+        }
+        console.error(err);
+        // Tüm skeleton'ları temizle, hata göster
+        ['dutyTrendWrap','monthlyReportsWrap','personnelTrendWrap','unitDistWrap','weeklyDutyWrap'].forEach(id => {
+            const el = document.getElementById(id);
+            el.classList.remove('loading');
+            el.innerHTML = '<div class="chart-error"><div class="icon">⚠️</div><div>Yüklenemedi</div></div>';
+        });
+    }
+}
+
+loadStats();
+// 1 dakikada bir otomatik yenile
+setInterval(loadStats, 60000);
+</script>
+</body>
+</html>

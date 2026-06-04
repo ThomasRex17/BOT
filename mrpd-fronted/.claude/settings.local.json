@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Administrator/Downloads/Bot/BOT/**)",
+      "Read(//c/Users/Administrator/Desktop/mrpd-backend/routes/**)",
+      "Read(//c/Users/Administrator/Desktop/mrpd-backend/utils/**)",
+      "Read(//c/Users/Administrator/Desktop/mrpd-backend/middleware/**)",
+      "Read(//c/Users/Administrator/Desktop/mrpd-backend/**)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\mrpd-backend\" | Where-Object { !$_.PSIsContainer } | Select-Object Name)",
+      "PowerShell(cmd /c \"dir C:\\\\Users\\\\Administrator\\\\Desktop\\\\mrpd-backend /b\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Administrator\\Downloads\\Bot\\BOT",
+      "C:\\Users\\Administrator\\Desktop\\mrpd-backend\\routes"
+    ]
+  }
+}

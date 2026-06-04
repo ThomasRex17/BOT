@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LSPD Kontrol Paneli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0b0f;
+  --panel: #12141a;
+  --panel-2: #181b23;
+  --border: #252832;
+  --border-bright: #3a3f4d;
+  --text: #e8eaed;
+  --text-dim: #8b91a0;
+  --text-faint: #5a5f6e;
+  --accent: #f59e0b;
+  --accent-2: #d97706;
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.15);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.15);
+  --yellow: #eab308;
+  --yellow-dim: rgba(234,179,8,0.15);
+  --blue: #3b82f6;
+  --blue-dim: rgba(59,130,246,0.15);
+}
+html, body { height: 100%; }
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  overflow-x: hidden;
+}
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ===== LOGIN ===== */
+.login-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(245,158,11,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(59,130,246,0.06) 0%, transparent 40%),
+    var(--bg);
+  padding: 24px;
+}
+.login-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.login-card .logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.login-card .logo-mark {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: #1a1300;
+  font-family: 'JetBrains Mono', monospace;
+}
+.login-card h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.login-card .sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 8px; font-weight: 500; }
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--panel-2);
+}
+
+.btn {
+  background: var(--accent);
+  color: #1a1300;
+  border: none;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s, background 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn:hover { background: #fbbf24; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.full { width: 100%; justify-content: center; }
+.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn.ghost:hover { background: var(--panel-2); border-color: var(--border-bright); }
+.btn.danger { background: var(--red); color: white; }
+.btn.danger:hover { background: #dc2626; }
+.btn.success { background: var(--green); color: white; }
+.btn.success:hover { background: #059669; }
+.btn.sm { padding: 7px 12px; font-size: 12px; }
+
+.alert {
+  background: var(--red-dim);
+  border: 1px solid var(--red);
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* ===== APP LAYOUT ===== */
+.app { display: none; min-height: 100vh; }
+.app.active { display: grid; grid-template-columns: 240px 1fr; }
+
+.sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.sidebar .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar .logo .mark {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #1a1300;
+  font-family: 'JetBrains Mono', monospace;
+}
+.sidebar .logo .info .name { font-size: 13px; font-weight: 600; }
+.sidebar .logo .info .ver { font-size: 10px; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--panel-2); color: var(--text); }
+.nav-item.active { background: var(--panel-2); color: var(--accent); }
+.nav-item .ic { width: 18px; height: 18px; opacity: 0.7; }
+
+.sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+.user-info { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; }
+.user-info .avatar { width: 32px; height: 32px; background: var(--panel-2); border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--accent); }
+.user-info .meta { flex: 1; min-width: 0; }
+.user-info .meta .nm { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-info .meta .rl { font-size: 10px; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
+
+/* ===== MAIN ===== */
+.main { padding: 32px 40px; min-width: 0; }
+.page { display: none; }
+.page.active { display: block; }
+
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; gap: 24px; flex-wrap: wrap; }
+.page-header h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.025em; }
+.page-header .sub { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+
+/* ===== PROCESS CARDS ===== */
+.processes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+.proc-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: border-color 0.15s, transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.proc-card:hover { border-color: var(--border-bright); }
+.proc-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--text-faint);
+  transition: background 0.3s;
+}
+.proc-card.online::before { background: linear-gradient(90deg, var(--green), transparent); }
+.proc-card.stopped::before { background: linear-gradient(90deg, var(--red), transparent); }
+.proc-card.errored::before { background: linear-gradient(90deg, var(--red), var(--accent)); }
+
+.proc-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+.proc-name { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; word-break: break-all; }
+.proc-script { font-size: 11px; color: var(--text-faint); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+.status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; flex-shrink: 0; }
+.status-pill.online { background: var(--green-dim); color: var(--green); }
+.status-pill.stopped { background: var(--red-dim); color: var(--red); }
+.status-pill.errored { background: var(--red-dim); color: var(--red); }
+.status-pill.launching { background: var(--yellow-dim); color: var(--yellow); }
+.status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.status-pill.online .dot { animation: pulse 2s infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.proc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; padding: 12px; background: var(--bg); border-radius: 8px; }
+.stat { text-align: center; }
+.stat .lbl { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+.stat .val { font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.stat .val .unit { font-size: 11px; color: var(--text-dim); font-weight: 400; }
+
+.proc-meta { display: flex; gap: 16px; font-size: 11px; color: var(--text-dim); margin-bottom: 16px; font-family: 'JetBrains Mono', monospace; flex-wrap: wrap; }
+.proc-meta span { display: inline-flex; align-items: center; gap: 5px; }
+
+.proc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.proc-actions .btn { flex: 1; min-width: 80px; justify-content: center; }
+
+/* ===== LOG VIEWER ===== */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-bg.active { display: flex; }
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1000px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-head h3 { font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.modal-close { background: transparent; border: none; color: var(--text-dim); font-size: 22px; cursor: pointer; padding: 0 8px; }
+.modal-close:hover { color: var(--text); }
+.modal-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+.log-viewer {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  background: #050608;
+  color: #c8cdd8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.log-viewer .log-line { padding: 1px 0; }
+.log-viewer .log-line.err { color: #fca5a5; }
+.log-viewer .log-line.out { color: #c8cdd8; }
+.log-viewer .log-line .ts { color: #5a5f6e; margin-right: 8px; }
+
+.modal-foot { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+.live-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.live-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); }
+.live-indicator.connected .dot { background: var(--green); animation: pulse 2s infinite; }
+
+/* ===== TABLE ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+thead { background: var(--panel-2); }
+thead th { text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); font-weight: 600; }
+tbody tr { border-top: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:hover { background: var(--panel-2); }
+tbody td { padding: 14px 16px; font-size: 13px; }
+td.mono, th.mono { font-family: 'JetBrains Mono', monospace; }
+
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+.tag.admin { background: rgba(245,158,11,0.15); color: var(--accent); }
+.tag.user { background: rgba(59,130,246,0.15); color: var(--blue); }
+.tag.all { background: rgba(16,185,129,0.15); color: var(--green); }
+
+/* ===== EMPTY STATE ===== */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.empty .ic { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+.empty h3 { font-size: 16px; margin-bottom: 6px; color: var(--text); }
+.empty p { font-size: 13px; max-width: 400px; margin: 0 auto; }
+.empty .code-block { display: inline-block; margin-top: 16px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); }
+
+/* ===== TOAST ===== */
+.toast-wrap { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 8px; padding: 12px 16px; font-size: 13px; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); animation: slideIn 0.2s; }
+.toast.success { border-left-color: var(--green); }
+.toast.error { border-left-color: var(--red); }
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ===== SYSTEM STRIP ===== */
+.sys-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.sys-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+.sys-card .lbl { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+.sys-card .val { font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.sys-card .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+/* ===== ACTIVITY ===== */
+.activity-list { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.activity-item { display: grid; grid-template-columns: 100px 140px 1fr 140px; padding: 12px 16px; border-top: 1px solid var(--border); align-items: center; gap: 12px; font-size: 13px; }
+.activity-item:first-child { border-top: none; }
+.activity-item .time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); }
+.activity-item .user { font-weight: 500; }
+.activity-item .action { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.activity-item .target { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; text-align: right; }
+
+@media (max-width: 768px) {
+  .app.active { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; }
+  .main { padding: 20px; }
+}
+
+/* ===== TERMINAL ===== */
+.terminal-wrap {
+  background: #050608;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px);
+  min-height: 500px;
+}
+.terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header .dots { display: flex; gap: 6px; }
+.terminal-header .dot { width: 12px; height: 12px; border-radius: 50%; }
+.terminal-header .dot.r { background: #ef4444; }
+.terminal-header .dot.y { background: #eab308; }
+.terminal-header .dot.g { background: #22c55e; }
+.terminal-header .title { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
+.terminal-header .actions { display: flex; gap: 6px; }
+
+#terminal {
+  flex: 1;
+  padding: 8px;
+  overflow: hidden;
+}
+#terminal .xterm { height: 100%; }
+#terminal .xterm-viewport::-webkit-scrollbar { width: 8px; }
+#terminal .xterm-viewport::-webkit-scrollbar-track { background: #050608; }
+#terminal .xterm-viewport::-webkit-scrollbar-thumb { background: #25282f; border-radius: 4px; }
+
+.terminal-shortcuts {
+  padding: 10px 16px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.shortcut-label { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'JetBrains Mono', monospace; margin-right: 4px; }
+.shortcut-chip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.shortcut-chip:hover { color: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <div class="logo">
+      <div class="logo-mark">LS</div>
+      <div>
+        <h1>Kontrol Paneli</h1>
+        <div class="sub">v1.0.0 • PM2 Control</div>
+      </div>
+    </div>
+    <div id="loginErr"></div>
+    <form id="loginForm">
+      <div class="field">
+        <label>Kullanıcı Adı</label>
+        <input type="text" id="loginUser" autocomplete="username" autofocus required>
+      </div>
+      <div class="field">
+        <label>Şifre</label>
+        <input type="password" id="loginPass" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn full">Giriş Yap</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="mark">LS</div>
+      <div class="info">
+        <div class="name">Kontrol Paneli</div>
+        <div class="ver">v1.0.0</div>
+      </div>
+    </div>
+    <nav>
+      <div class="nav-item active" data-page="processes">
+        <span class="ic">🖥️</span> Process'ler
+      </div>
+      <div class="nav-item" data-page="terminal" data-admin>
+        <span class="ic">💻</span> Terminal
+      </div>
+      <div class="nav-item" data-page="ports" data-admin>
+        <span class="ic">🔌</span> Açık Portlar
+      </div>
+      <div class="nav-item" data-page="system">
+        <span class="ic">📊</span> Sistem
+      </div>
+      <div class="nav-item" data-page="activity" data-admin>
+        <span class="ic">📜</span> Aktivite
+      </div>
+      <div class="nav-item" data-page="users" data-admin>
+        <span class="ic">👥</span> Kullanıcılar
+      </div>
+      <div class="nav-item" data-page="account">
+        <span class="ic">⚙️</span> Hesabım
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar" id="userAvatar">?</div>
+        <div class="meta">
+          <div class="nm" id="userName">-</div>
+          <div class="rl" id="userRole">-</div>
+        </div>
+      </div>
+      <button class="btn ghost sm full" style="margin-top:8px" onclick="logout()">Çıkış</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- PROCESS'LER -->
+    <div class="page active" id="page-processes">
+      <div class="page-header">
+        <div>
+          <h2>Process Yönetimi</h2>
+          <div class="sub">PM2 üzerinden yönetilen tüm uygulamalar</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn ghost sm" onclick="loadProcesses()">↻ Yenile</button>
+          <button class="btn" onclick="showAddProcess()" data-admin>+ Yeni Process</button>
+        </div>
+      </div>
+      <div id="processesGrid" class="processes"></div>
+    </div>
+
+    <!-- TERMİNAL -->
+    <div class="page" id="page-terminal">
+      <div class="page-header">
+        <div>
+          <h2>💻 Web Terminal</h2>
+          <div class="sub">PowerShell / Bash komutlarını panelden çalıştır</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn ghost sm" onclick="terminalClear()">Temizle</button>
+          <button class="btn ghost sm" onclick="terminalReconnect()">↻ Yeniden Bağlan</button>
+        </div>
+      </div>
+      <div class="terminal-wrap">
+        <div class="terminal-header">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <div class="title" id="termStatus">Bağlanıyor...</div>
+          <div></div>
+        </div>
+        <div id="terminal"></div>
+        <div class="terminal-shortcuts">
+          <span class="shortcut-label">Hızlı:</span>
+          <span class="shortcut-chip" onclick="termRun('pm2 list')">pm2 list</span>
+          <span class="shortcut-chip" onclick="termRun('pm2 save')">pm2 save</span>
+          <span class="shortcut-chip" onclick="termRun('pm2 logs --lines 20')">pm2 logs</span>
+          <span class="shortcut-chip" onclick="termRun('pm2 monit')">pm2 monit</span>
+          <span class="shortcut-chip" onclick="termRun('netstat -ano | findstr LISTENING')">Açık portlar</span>
+          <span class="shortcut-chip" onclick="termRun('cls')">cls (temizle)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AÇIK PORTLAR -->
+    <div class="page" id="page-ports">
+      <div class="page-header">
+        <div>
+          <h2>🔌 Açık Portlar</h2>
+          <div class="sub">LISTENING durumdaki TCP portları ve onları tutan process'ler</div>
+        </div>
+        <button class="btn ghost sm" onclick="loadPorts()">↻ Yenile</button>
+      </div>
+      <div style="background:rgba(245,158,11,0.1);border:1px solid var(--accent);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--accent);">
+        💡 <b>Zombie process</b> sorunlarında bu sayfa hayat kurtarır. Bot durduğu halde portu hâlâ tutuyorsa "Öldür" butonuyla temizle.
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Port</th>
+            <th>Protokol</th>
+            <th>PID</th>
+            <th>Process Adı</th>
+            <th style="text-align:right;">İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="portsBody"></tbody>
+      </table>
+    </div>
+
+    <!-- SİSTEM -->
+    <div class="page" id="page-system">
+      <div class="page-header">
+        <div>
+          <h2>Sistem Bilgisi</h2>
+          <div class="sub">Sunucunun anlık durumu</div>
+        </div>
+        <button class="btn ghost sm" onclick="loadSystem()">↻ Yenile</button>
+      </div>
+      <div id="systemGrid" class="sys-strip"></div>
+    </div>
+
+    <!-- AKTİVİTE -->
+    <div class="page" id="page-activity">
+      <div class="page-header">
+        <div>
+          <h2>Aktivite Logu</h2>
+          <div class="sub">Son 100 panel işlemi</div>
+        </div>
+        <button class="btn ghost sm" onclick="loadActivity()">↻ Yenile</button>
+      </div>
+      <div id="activityList" class="activity-list"></div>
+    </div>
+
+    <!-- KULLANICILAR -->
+    <div class="page" id="page-users">
+      <div class="page-header">
+        <div>
+          <h2>Kullanıcı Yönetimi</h2>
+          <div class="sub">Panel erişimi olan kişiler</div>
+        </div>
+        <button class="btn" onclick="showAddUser()">+ Yeni Kullanıcı</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Kullanıcı Adı</th>
+            <th>Rol</th>
+            <th>İzinli Process'ler</th>
+            <th>Oluşturma</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+    </div>
+
+    <!-- HESABIM -->
+    <div class="page" id="page-account">
+      <div class="page-header">
+        <div>
+          <h2>Hesap Ayarları</h2>
+          <div class="sub">Şifreni değiştir</div>
+        </div>
+      </div>
+      <div style="max-width:460px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px;">
+        <form id="passwordForm">
+          <div class="field">
+            <label>Mevcut Şifre</label>
+            <input type="password" id="oldPass" required>
+          </div>
+          <div class="field">
+            <label>Yeni Şifre (min 6 karakter)</label>
+            <input type="password" id="newPass" minlength="6" required>
+          </div>
+          <button class="btn">Şifreyi Güncelle</button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- LOG MODAL -->
+<div class="modal-bg" id="logModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="logTitle">Log Görüntüleyici</h3>
+      <button class="modal-close" onclick="closeLogModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="log-viewer" id="logViewer"></div>
+    </div>
+    <div class="modal-foot">
+      <div class="live-indicator" id="liveIndicator"><span class="dot"></span> <span id="liveText">Bağlanıyor...</span></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn ghost sm" onclick="clearLogView()">Temizle</button>
+        <button class="btn ghost sm" onclick="toggleAutoscroll()" id="autoscrollBtn">⏬ Otomatik Kaydır: AÇIK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-bg" id="userModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-head">
+      <h3 id="userModalTitle">Yeni Kullanıcı</h3>
+      <button class="modal-close" onclick="closeUserModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="padding:20px;">
+        <form id="userForm">
+          <div class="field">
+            <label>Kullanıcı Adı</label>
+            <input type="text" id="newUserName" required>
+          </div>
+          <div class="field">
+            <label>Şifre (min 6 karakter)</label>
+            <input type="password" id="newUserPass" minlength="6" required>
+          </div>
+          <div class="field">
+            <label>Rol</label>
+            <select id="newUserRole">
+              <option value="user">User (sınırlı yetki)</option>
+              <option value="admin">Admin (tüm yetkiler)</option>
+            </select>
+          </div>
+          <div class="field" id="allowedProcessesField">
+            <label>İzinli Process'ler (virgülle ayır, * yazarsan hepsi)</label>
+            <input type="text" id="newUserProcesses" placeholder="bot,frontend">
+          </div>
+          <button class="btn full">Kullanıcı Oluştur</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROCESS MODAL -->
+<div class="modal-bg" id="addProcessModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h3>➕ Yeni Process Ekle</h3>
+      <button class="modal-close" onclick="closeAddProcess()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="padding:20px;">
+        <form id="addProcessForm">
+          <div class="field">
+            <label>Process Adı *</label>
+            <input type="text" id="newProcName" placeholder="discord-bot" required>
+          </div>
+          <div class="field">
+            <label>Script Dosyası (Tam Yol) *</label>
+            <input type="text" id="newProcScript" placeholder="C:\Users\Administrator\Desktop\bot\index.js" required>
+            <div style="font-size:11px;color:var(--text-faint);margin-top:4px;font-family:'JetBrains Mono',monospace;">Örn: C:\path\to\index.js veya /home/user/app/server.js</div>
+          </div>
+          <div class="field">
+            <label>Çalışma Klasörü (cwd, opsiyonel)</label>
+            <input type="text" id="newProcCwd" placeholder="Boş bırakırsan script'in olduğu klasör">
+          </div>
+          <div class="field">
+            <label>Argümanlar (opsiyonel)</label>
+            <input type="text" id="newProcArgs" placeholder="--port=3000">
+          </div>
+          <div class="field">
+            <label>Yorumlayıcı (opsiyonel)</label>
+            <input type="text" id="newProcInterpreter" placeholder="node (varsayılan), python, vb.">
+          </div>
+          <button class="btn full">Process'i Başlat</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ============================================================================
+// STATE
+// ============================================================================
+let token = localStorage.getItem('token');
+let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+let currentLogWs = null;
+let autoscroll = true;
+let processesInterval = null;
+let systemInterval = null;
+
+// ============================================================================
+// AUTH
+// ============================================================================
+async function api(path, opts = {}) {
+  const res = await fetch('/api' + path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401) {
+    logout();
+    throw new Error('Oturum geçersiz');
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Hata');
+  return data;
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('loginUser').value;
+  const password = document.getElementById('loginPass').value;
+  const errBox = document.getElementById('loginErr');
+  errBox.innerHTML = '';
+  
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Giriş başarısız');
+    
+    token = data.token;
+    currentUser = { username: data.username, role: data.role, allowedProcesses: data.allowedProcesses };
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(currentUser));
+    showApp();
+  } catch(e) {
+    errBox.innerHTML = `<div class="alert">${e.message}</div>`;
+  }
+});
+
+function logout() {
+  if (currentLogWs) { try { currentLogWs.close(); } catch(e){} }
+  if (processesInterval) clearInterval(processesInterval);
+  if (systemInterval) clearInterval(systemInterval);
+  token = null;
+  currentUser = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('loginScreen').style.display = 'grid';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('userName').textContent = currentUser.username;
+  document.getElementById('userRole').textContent = currentUser.role;
+  document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+  
+  // Admin sayfalarını gizle/göster
+  document.querySelectorAll('[data-admin]').forEach(el => {
+    el.style.display = currentUser.role === 'admin' ? '' : 'none';
+  });
+  
+  loadProcesses();
+  // Her 3 saniyede process'leri güncelle
+  processesInterval = setInterval(loadProcesses, 3000);
+}
+
+// ============================================================================
+// NAVIGATION
+// ============================================================================
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => {
+    const page = item.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    
+    if (page === 'system') loadSystem();
+    if (page === 'activity') loadActivity();
+    if (page === 'users') loadUsers();
+    if (page === 'terminal') initTerminal();
+    if (page === 'ports') loadPorts();
+  });
+});
+
+// ============================================================================
+// TERMİNAL
+// ============================================================================
+let term = null;
+let termWs = null;
+let termFitAddon = null;
+let termCwd = '';
+let termCurrentLine = '';
+let termHistory = [];
+let termHistoryIdx = -1;
+let termIsRunning = false;
+
+function initTerminal() {
+  if (term) {
+    // Sadece yeniden boyutlandır
+    setTimeout(() => { if (termFitAddon) termFitAddon.fit(); }, 50);
+    return;
+  }
+  
+  term = new Terminal({
+    fontFamily: '"JetBrains Mono", "Cascadia Code", "Consolas", monospace',
+    fontSize: 13,
+    lineHeight: 1.3,
+    cursorBlink: true,
+    cursorStyle: 'block',
+    theme: {
+      background: '#050608',
+      foreground: '#c8cdd8',
+      cursor: '#f59e0b',
+      selectionBackground: '#3b82f650',
+      black: '#0a0b0f',
+      red: '#ef4444',
+      green: '#10b981',
+      yellow: '#f59e0b',
+      blue: '#3b82f6',
+      magenta: '#ec4899',
+      cyan: '#06b6d4',
+      white: '#e8eaed',
+      brightBlack: '#5a5f6e',
+      brightRed: '#fca5a5',
+      brightGreen: '#6ee7b7',
+      brightYellow: '#fbbf24',
+      brightBlue: '#93c5fd',
+      brightWhite: '#ffffff'
+    },
+    scrollback: 5000
+  });
+  
+  termFitAddon = new FitAddon.FitAddon();
+  term.loadAddon(termFitAddon);
+  term.open(document.getElementById('terminal'));
+  termFitAddon.fit();
+  
+  window.addEventListener('resize', () => {
+    if (termFitAddon) try { termFitAddon.fit(); } catch(e) {}
+  });
+  
+  term.onData(handleTermInput);
+  
+  connectTerminalWs();
+}
+
+function connectTerminalWs() {
+  if (termWs) try { termWs.close(); } catch(e){}
+  
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}/api/terminal/stream?token=${token}`);
+  termWs = ws;
+  
+  document.getElementById('termStatus').textContent = 'Bağlanıyor...';
+  
+  ws.onopen = () => {
+    document.getElementById('termStatus').textContent = '● Bağlı';
+  };
+  
+  ws.onmessage = (e) => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch(err) { return; }
+    
+    if (msg.type === 'ready') {
+      termCwd = msg.cwd;
+      // Kalıcı history'i restore et
+      if (msg.history && Array.isArray(msg.history)) {
+        termHistory = msg.history;
+      }
+      
+      term.write('\x1b[1;33m🎛️  LSPD Kontrol Paneli — Web Terminal\x1b[0m\r\n');
+      term.write(`\x1b[2;37mPlatform: ${msg.platform} • Çalışma dizini: ${msg.cwd}\x1b[0m\r\n`);
+      
+      // Geçmiş output buffer'ı geri yükle
+      if (msg.outputBuffer && msg.outputBuffer.length > 0) {
+        term.write(`\x1b[2;37m─── Önceki oturum (${msg.outputBuffer.length} satır) ───\x1b[0m\r\n`);
+        msg.outputBuffer.forEach(item => {
+          if (item.stream === 'err') {
+            term.write('\x1b[91m' + item.data.replace(/\n/g, '\r\n') + '\x1b[0m');
+          } else if (item.stream === 'cmd') {
+            term.write('\x1b[1;36m' + item.data.replace(/\n/g, '\r\n') + '\x1b[0m');
+          } else {
+            term.write(item.data.replace(/\n/g, '\r\n'));
+          }
+        });
+        term.write('\x1b[2;37m─── Yeni komut için Enter ───\x1b[0m\r\n');
+      } else {
+        term.write('\x1b[2;37mÖrn: pm2 list, pm2 delete frontend, npm install\x1b[0m\r\n');
+      }
+      
+      term.write('\r\n');
+      
+      // Eğer çalışan komut varsa, prompt yazma — bitince yazılır
+      if (msg.isRunning) {
+        term.write('\x1b[33m[Arka planda komut çalışıyor, bittiğinde prompt gelecek]\x1b[0m\r\n');
+        termIsRunning = true;
+      } else {
+        writePrompt();
+      }
+    } else if (msg.type === 'output') {
+      const color = msg.stream === 'err' ? '\x1b[91m' : (msg.stream === 'cmd' ? '\x1b[1;36m' : '');
+      const reset = (msg.stream === 'err' || msg.stream === 'cmd') ? '\x1b[0m' : '';
+      term.write(color + msg.data.replace(/\n/g, '\r\n') + reset);
+    } else if (msg.type === 'done') {
+      termCwd = msg.cwd || termCwd;
+      termIsRunning = false;
+      term.write('\r\n');
+      writePrompt();
+    } else if (msg.type === 'clear') {
+      term.clear();
+    } else if (msg.type === 'error') {
+      term.write(`\x1b[91m${msg.message}\x1b[0m\r\n`);
+    }
+  };
+  
+  ws.onclose = () => {
+    document.getElementById('termStatus').textContent = '○ Bağlantı kapandı';
+    if (term) term.write('\r\n\x1b[91m[Bağlantı koptu — "Yeniden Bağlan" tuşla]\x1b[0m\r\n');
+  };
+  
+  ws.onerror = () => {
+    document.getElementById('termStatus').textContent = '✕ Hata';
+  };
+}
+
+function writePrompt() {
+  const shortCwd = termCwd.length > 50 ? '...' + termCwd.slice(-47) : termCwd;
+  term.write(`\x1b[1;36mPS\x1b[0m \x1b[33m${shortCwd}\x1b[0m\x1b[1;36m>\x1b[0m `);
+  termCurrentLine = '';
+}
+
+function handleTermInput(data) {
+  if (termIsRunning) {
+    // Çalışan komut varken Ctrl+C
+    if (data === '\u0003') {
+      if (termWs && termWs.readyState === WebSocket.OPEN) {
+        termWs.send(JSON.stringify({ type: 'cancel' }));
+      }
+    }
+    return;
+  }
+  
+  const code = data.charCodeAt(0);
+  
+  if (data === '\r') {
+    // Enter
+    term.write('\r\n');
+    const cmd = termCurrentLine.trim();
+    if (cmd) {
+      termHistory.unshift(cmd);
+      if (termHistory.length > 50) termHistory.pop();
+      termHistoryIdx = -1;
+      
+      if (termWs && termWs.readyState === WebSocket.OPEN) {
+        termIsRunning = true;
+        termWs.send(JSON.stringify({ type: 'exec', cmd }));
+      } else {
+        term.write('\x1b[91mBağlantı yok — Yeniden Bağlan tuşla\x1b[0m\r\n');
+        writePrompt();
+      }
+    } else {
+      writePrompt();
+    }
+  } else if (data === '\u007f' || data === '\b') {
+    // Backspace
+    if (termCurrentLine.length > 0) {
+      termCurrentLine = termCurrentLine.slice(0, -1);
+      term.write('\b \b');
+    }
+  } else if (data === '\u0003') {
+    // Ctrl+C (boşken)
+    term.write('^C\r\n');
+    termCurrentLine = '';
+    writePrompt();
+  } else if (data === '\u001b[A') {
+    // Up arrow - history
+    if (termHistory.length === 0) return;
+    termHistoryIdx = Math.min(termHistoryIdx + 1, termHistory.length - 1);
+    // Geçerli satırı sil
+    for (let i = 0; i < termCurrentLine.length; i++) term.write('\b \b');
+    termCurrentLine = termHistory[termHistoryIdx];
+    term.write(termCurrentLine);
+  } else if (data === '\u001b[B') {
+    // Down arrow
+    for (let i = 0; i < termCurrentLine.length; i++) term.write('\b \b');
+    if (termHistoryIdx > 0) {
+      termHistoryIdx--;
+      termCurrentLine = termHistory[termHistoryIdx];
+      term.write(termCurrentLine);
+    } else {
+      termHistoryIdx = -1;
+      termCurrentLine = '';
+    }
+  } else if (code >= 32 || code === 9) {
+    // Yazdırılabilir karakter veya tab
+    termCurrentLine += data;
+    term.write(data);
+  }
+}
+
+function termRun(cmd) {
+  if (!term || !termWs || termWs.readyState !== WebSocket.OPEN) return;
+  if (termIsRunning) return;
+  // Mevcut satırı temizle
+  for (let i = 0; i < termCurrentLine.length; i++) term.write('\b \b');
+  term.write(cmd + '\r\n');
+  termCurrentLine = '';
+  termIsRunning = true;
+  termWs.send(JSON.stringify({ type: 'exec', cmd }));
+}
+
+function terminalClear() {
+  if (!term) return;
+  if (confirm('Tüm terminal geçmişi ve buffer temizlensin mi?\n\n(Sadece görüntüyü temizlemek için "cls" yaz)')) {
+    if (termWs && termWs.readyState === WebSocket.OPEN) {
+      termWs.send(JSON.stringify({ type: 'clear-session' }));
+    }
+    termHistory = [];
+    term.clear();
+  }
+}
+
+function terminalReconnect() {
+  if (term) {
+    term.write('\r\n\x1b[33m[Yeniden bağlanılıyor...]\x1b[0m\r\n');
+  }
+  connectTerminalWs();
+}
+
+// ============================================================================
+// PROCESS — Sil / Yeni Ekle
+// ============================================================================
+async function deleteProcess(name) {
+  if (!confirm(`"${name}" PM2 listesinden tamamen silinsin mi?\n\nNot: Bu sadece PM2'den çıkartır, dosyaları silmez.`)) return;
+  try {
+    await api('/processes/' + name, { method: 'DELETE' });
+    toast(`✅ ${name} silindi`, 'success');
+    setTimeout(loadProcesses, 500);
+  } catch(e) {
+    toast('Hata: ' + e.message, 'error');
+  }
+}
+
+function showAddProcess() {
+  document.getElementById('newProcName').value = '';
+  document.getElementById('newProcScript').value = '';
+  document.getElementById('newProcCwd').value = '';
+  document.getElementById('newProcArgs').value = '';
+  document.getElementById('newProcInterpreter').value = '';
+  document.getElementById('addProcessModal').classList.add('active');
+}
+function closeAddProcess() {
+  document.getElementById('addProcessModal').classList.remove('active');
+}
+
+document.getElementById('addProcessForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    name: document.getElementById('newProcName').value.trim(),
+    script: document.getElementById('newProcScript').value.trim(),
+    cwd: document.getElementById('newProcCwd').value.trim() || undefined,
+    args: document.getElementById('newProcArgs').value.trim() || undefined,
+    interpreter: document.getElementById('newProcInterpreter').value.trim() || undefined
+  };
+  try {
+    await api('/processes', { method: 'POST', body: JSON.stringify(payload) });
+    toast(`✅ ${payload.name} eklendi`, 'success');
+    closeAddProcess();
+    setTimeout(loadProcesses, 800);
+  } catch(e) {
+    toast('Hata: ' + e.message, 'error');
+  }
+});
+
+// ============================================================================
+// PORTS
+// ============================================================================
+async function loadPorts() {
+  try {
+    const ports = await api('/ports');
+    const body = document.getElementById('portsBody');
+    
+    if (ports.length === 0) {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">Açık port bulunamadı</td></tr>';
+      return;
+    }
+    
+    // Önemli portları üste al (3000-9999 arası)
+    const importantPorts = ports.filter(p => p.port >= 1024 && p.port < 10000);
+    const systemPorts = ports.filter(p => p.port < 1024 || p.port >= 10000);
+    const sorted = [...importantPorts, ...systemPorts];
+    
+    body.innerHTML = sorted.map(p => {
+      const isPanel = p.pid === window.panelPid;
+      return `
+      <tr>
+        <td class="mono"><b style="font-size:15px;color:${p.port >= 1024 && p.port < 10000 ? 'var(--accent)' : 'var(--text-dim)'};">${p.port}</b></td>
+        <td class="mono" style="font-size:11px;color:var(--text-dim);">${p.proto}</td>
+        <td class="mono">${p.pid}</td>
+        <td>${p.processName ? `<span class="tag" style="background:var(--green-dim);color:var(--green);">${escapeHtml(p.processName)}</span>` : '<span style="color:var(--text-faint);font-size:12px;">— bilinmiyor —</span>'}</td>
+        <td style="text-align:right;">
+          ${isPanel ? '<span style="font-size:11px;color:var(--text-faint);">Panel kendisi</span>' : `<button class="btn danger sm" onclick="killPid(${p.pid}, '${escapeHtml(p.processName || 'PID '+p.pid)}')">💀 Öldür</button>`}
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    toast('Portlar yüklenemedi: ' + e.message, 'error');
+  }
+}
+
+async function killPid(pid, name) {
+  if (!confirm(`⚠️ PID ${pid} (${name}) ZORLA öldürülsün mü?\n\nBu işlem:\n• Process'i anında sonlandırır\n• Tuttuğu portları serbest bırakır\n• Veri kaybına yol açabilir`)) return;
+  try {
+    await api(`/ports/${pid}/kill`, { method: 'POST' });
+    toast(`💀 PID ${pid} öldürüldü`, 'success');
+    setTimeout(loadPorts, 800);
+  } catch(e) {
+    toast('Hata: ' + e.message, 'error');
+  }
+}
+
+// ============================================================================
+// PROCESSES
+// ============================================================================
+async function loadProcesses() {
+  try {
+    const list = await api('/processes');
+    const grid = document.getElementById('processesGrid');
+    
+    if (list.length === 0) {
+      grid.innerHTML = `
+        <div class="empty" style="grid-column: 1/-1;">
+          <div class="ic">📦</div>
+          <h3>Hiç process yok</h3>
+          <p>PM2'ye process eklemek için terminalden çalıştır:</p>
+          <div class="code-block">pm2 start bot.js --name discord-bot</div>
+        </div>
+      `;
+      return;
+    }
+    
+    grid.innerHTML = list.map(p => `
+      <div class="proc-card ${p.status}">
+        <div class="proc-head">
+          <div>
+            <div class="proc-name">${escapeHtml(p.name)}</div>
+            <div class="proc-script">${escapeHtml(shortPath(p.script))}</div>
+          </div>
+          <div class="status-pill ${p.status}"><span class="dot"></span> ${p.status}</div>
+        </div>
+        <div class="proc-stats">
+          <div class="stat">
+            <div class="lbl">CPU</div>
+            <div class="val">${p.cpu}<span class="unit">%</span></div>
+          </div>
+          <div class="stat">
+            <div class="lbl">Bellek</div>
+            <div class="val">${p.memory}<span class="unit"> MB</span></div>
+          </div>
+          <div class="stat">
+            <div class="lbl">Yeniden Başlatma</div>
+            <div class="val">${p.restarts}</div>
+          </div>
+        </div>
+        <div class="proc-meta">
+          <span>⏱ ${p.status === 'online' ? uptimeFormat(Date.now() - p.uptime) : '—'}</span>
+          <span>PID: ${p.pid || '—'}</span>
+          <span>${p.exec_mode || 'fork'}</span>
+        </div>
+        <div class="proc-actions">
+          ${p.status === 'online' 
+            ? `<button class="btn ghost sm" onclick="action('${p.name}','restart')">🔄 Restart</button>
+               <button class="btn danger sm" onclick="action('${p.name}','stop')">⏹ Durdur</button>
+               <button class="btn sm" onclick="forceKill('${p.name}')" style="background:#7c2d12;color:#fed7aa;" title="Process'i ve tüm child'larını force kill — zombie portları temizler">💀 Force Kill</button>`
+            : `<button class="btn success sm" onclick="action('${p.name}','start')">▶ Başlat</button>
+               <button class="btn sm" onclick="forceKill('${p.name}')" style="background:#7c2d12;color:#fed7aa;" title="Hâlâ portu tutuyorsa öldür">💀 Force Kill</button>`
+          }
+          <button class="btn ghost sm" onclick="openLogs('${p.name}')">📋 Loglar</button>
+          ${currentUser.role === 'admin' ? `<button class="btn ghost sm" onclick="deleteProcess('${p.name}')" style="color:var(--red);border-color:rgba(239,68,68,0.3);">🗑 Sil</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    const grid = document.getElementById('processesGrid');
+    if (e.message && e.message.includes('Failed to fetch')) {
+      grid.innerHTML = `
+        <div class="empty" style="grid-column: 1/-1;">
+          <div class="ic">⚠️</div>
+          <h3>Panel sunucusuna ulaşılamıyor</h3>
+          <p>Panel crash olmuş olabilir. Terminalden kontrol et:</p>
+          <div class="code-block">pm2 logs kontrol-panel --lines 30</div>
+        </div>
+      `;
+    } else {
+      toast("Process'ler yüklenemedi: " + e.message, 'error');
+    }
+  }
+}
+
+async function action(name, type) {
+  if (type === 'stop' && !confirm(`"${name}" durdurulsun mu?`)) return;
+  try {
+    await api(`/processes/${name}/${type}`, { method: 'POST' });
+    toast(`✅ ${name} → ${type}`, 'success');
+    setTimeout(loadProcesses, 500);
+  } catch(e) {
+    toast('Hata: ' + e.message, 'error');
+  }
+}
+
+async function forceKill(name) {
+  if (!confirm(`⚠️ "${name}" FORCE KILL edilsin mi?\n\nBu işlem:\n• Process'i ve tüm child process'lerini ZORLA öldürür\n• Tuttuğu portları serbest bırakır\n• Veri kaybına yol açabilir (kaydedilmemiş işlemler)\n\nDevam edilsin mi?`)) return;
+  try {
+    const result = await api(`/processes/${name}/kill`, { method: 'POST' });
+    toast(`💀 ${name} force kill edildi${result.pid ? ` (PID: ${result.pid})` : ''}`, 'success');
+    setTimeout(loadProcesses, 800);
+  } catch(e) {
+    toast('Hata: ' + e.message, 'error');
+  }
+}
+
+// ============================================================================
+// LOGS
+// ============================================================================
+async function openLogs(processName) {
+  document.getElementById('logTitle').textContent = `📋 ${processName} — Canlı Log`;
+  document.getElementById('logModal').classList.add('active');
+  document.getElementById('logViewer').innerHTML = '';
+  
+  // Önce son logları yükle
+  try {
+    const logs = await api('/processes/' + processName + '/logs');
+    if (logs.stdout) appendLog(logs.stdout, 'out', false);
+    if (logs.stderr) appendLog(logs.stderr, 'err', false);
+  } catch(e) {}
+  
+  // WebSocket başlat
+  if (currentLogWs) { try { currentLogWs.close(); } catch(e){} }
+  
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}/api/logs/stream?token=${token}&process=${encodeURIComponent(processName)}`);
+  currentLogWs = ws;
+  
+  const liveInd = document.getElementById('liveIndicator');
+  const liveText = document.getElementById('liveText');
+  
+  ws.onopen = () => {
+    liveInd.classList.add('connected');
+    liveText.textContent = 'Canlı';
+  };
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'log') {
+        appendLog(msg.data, msg.stream, true);
+      } else if (msg.type === 'error') {
+        appendLog('[HATA] ' + msg.message, 'err', true);
+      }
+    } catch(err) {}
+  };
+  ws.onclose = () => {
+    liveInd.classList.remove('connected');
+    liveText.textContent = 'Bağlantı kapandı';
+  };
+  ws.onerror = () => {
+    liveInd.classList.remove('connected');
+    liveText.textContent = 'Hata';
+  };
+}
+
+function appendLog(data, stream, isLive) {
+  const viewer = document.getElementById('logViewer');
+  const lines = data.split('\n').filter(l => l !== '');
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    div.className = 'log-line ' + (stream === 'err' ? 'err' : 'out');
+    if (isLive) {
+      const ts = new Date().toLocaleTimeString('tr-TR');
+      div.innerHTML = `<span class="ts">${ts}</span>${escapeHtml(line)}`;
+    } else {
+      div.textContent = line;
+    }
+    viewer.appendChild(div);
+  });
+  // Çok fazla satır biriktiyse eski olanları sil (performans)
+  while (viewer.children.length > 2000) viewer.removeChild(viewer.firstChild);
+  if (autoscroll) viewer.scrollTop = viewer.scrollHeight;
+}
+
+function clearLogView() {
+  document.getElementById('logViewer').innerHTML = '';
+}
+
+function toggleAutoscroll() {
+  autoscroll = !autoscroll;
+  document.getElementById('autoscrollBtn').textContent = `⏬ Otomatik Kaydır: ${autoscroll ? 'AÇIK' : 'KAPALI'}`;
+}
+
+function closeLogModal() {
+  document.getElementById('logModal').classList.remove('active');
+  if (currentLogWs) { try { currentLogWs.close(); } catch(e){} currentLogWs = null; }
+}
+
+// ============================================================================
+// SYSTEM
+// ============================================================================
+async function loadSystem() {
+  try {
+    const sys = await api('/system');
+    const memUsed = sys.totalMem - sys.freeMem;
+    const memPct = ((memUsed / sys.totalMem) * 100).toFixed(0);
+    
+    document.getElementById('systemGrid').innerHTML = `
+      <div class="sys-card">
+        <div class="lbl">Hostname</div>
+        <div class="val" style="font-size:14px;">${escapeHtml(sys.hostname)}</div>
+        <div class="sub">${sys.platform}</div>
+      </div>
+      <div class="sys-card">
+        <div class="lbl">Sunucu Çalışma Süresi</div>
+        <div class="val" style="font-size:14px;">${uptimeFormat(sys.uptime * 1000)}</div>
+      </div>
+      <div class="sys-card">
+        <div class="lbl">CPU</div>
+        <div class="val">${sys.cpuCount} Core</div>
+        <div class="sub">${escapeHtml(sys.cpuModel.substring(0, 30))}</div>
+      </div>
+      <div class="sys-card">
+        <div class="lbl">Yük Ortalaması</div>
+        <div class="val">${sys.loadAvg.map(x => x.toFixed(2)).join(' / ')}</div>
+        <div class="sub">1dk / 5dk / 15dk</div>
+      </div>
+      <div class="sys-card">
+        <div class="lbl">Bellek</div>
+        <div class="val">${(memUsed/1024).toFixed(1)} <span style="font-size:12px;color:var(--text-dim)">/ ${(sys.totalMem/1024).toFixed(1)} GB</span></div>
+        <div class="sub">${memPct}% kullanımda</div>
+      </div>
+    `;
+  } catch(e) {
+    toast('Sistem bilgisi yüklenemedi', 'error');
+  }
+}
+
+// ============================================================================
+// ACTIVITY
+// ============================================================================
+async function loadActivity() {
+  try {
+    const list = await api('/activity');
+    const wrap = document.getElementById('activityList');
+    if (list.length === 0) {
+      wrap.innerHTML = '<div class="empty"><div class="ic">📜</div><h3>Henüz aktivite yok</h3></div>';
+      return;
+    }
+    wrap.innerHTML = list.map(a => `
+      <div class="activity-item">
+        <div class="time">${new Date(a.time).toLocaleString('tr-TR')}</div>
+        <div class="user">${escapeHtml(a.username)}</div>
+        <div class="action">${escapeHtml(a.action)}</div>
+        <div class="target">${a.target ? escapeHtml(a.target) : '—'}</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    toast('Aktivite yüklenemedi', 'error');
+  }
+}
+
+// ============================================================================
+// USERS
+// ============================================================================
+async function loadUsers() {
+  try {
+    const users = await api('/users');
+    document.getElementById('usersBody').innerHTML = users.map(u => `
+      <tr>
+        <td class="mono">${escapeHtml(u.username)}</td>
+        <td><span class="tag ${u.role}">${u.role}</span></td>
+        <td>${u.allowedProcesses === '*' ? '<span class="tag all">TÜMÜ</span>' : (Array.isArray(u.allowedProcesses) ? u.allowedProcesses.map(p => `<span class="tag" style="background:var(--panel-2);color:var(--text-dim)">${escapeHtml(p)}</span>`).join(' ') : '—')}</td>
+        <td class="mono" style="font-size:11px;color:var(--text-dim)">${new Date(u.createdAt).toLocaleDateString('tr-TR')}</td>
+        <td style="text-align:right;">
+          ${u.username !== 'admin' && u.username !== currentUser.username ? `<button class="btn danger sm" onclick="deleteUser('${u.username}')">Sil</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    toast('Kullanıcılar yüklenemedi', 'error');
+  }
+}
+
+function showAddUser() {
+  document.getElementById('newUserName').value = '';
+  document.getElementById('newUserPass').value = '';
+  document.getElementById('newUserRole').value = 'user';
+  document.getElementById('newUserProcesses').value = '';
+  document.getElementById('userModal').classList.add('active');
+}
+function closeUserModal() {
+  document.getElementById('userModal').classList.remove('active');
+}
+
+document.getElementById('newUserRole').addEventListener('change', (e) => {
+  document.getElementById('allowedProcessesField').style.display = e.target.value === 'admin' ? 'none' : 'block';
+});
+
+document.getElementById('userForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('newUserName').value.trim();
+  const password = document.getElementById('newUserPass').value;
+  const role = document.getElementById('newUserRole').value;
+  const procStr = document.getElementById('newUserProcesses').value.trim();
+  
+  let allowedProcesses = [];
+  if (role === 'admin') allowedProcesses = '*';
+  else if (procStr === '*') allowedProcesses = '*';
+  else if (procStr) allowedProcesses = procStr.split(',').map(p => p.trim()).filter(p => p);
+  
+  try {
+    await api('/users', {
+      method: 'POST',
+      body: JSON.stringify({ username, password, role, allowedProcesses })
+    });
+    toast('✅ Kullanıcı oluşturuldu', 'success');
+    closeUserModal();
+    loadUsers();
+  } catch(e) {
+    toast('Hata: ' + e.message, 'error');
+  }
+});
+
+async function deleteUser(username) {
+  if (!confirm(`"${username}" silinsin mi?`)) return;
+  try {
+    await api('/users/' + username, { method: 'DELETE' });
+    toast('Kullanıcı silindi', 'success');
+    loadUsers();
+  } catch(e) {
+    toast('Hata: ' + e.message, 'error');
+  }
+}
+
+// ============================================================================
+// PASSWORD
+// ============================================================================
+document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const oldPassword = document.getElementById('oldPass').value;
+  const newPassword = document.getElementById('newPass').value;
+  try {
+    await api('/me/password', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword })
+    });
+    toast('✅ Şifre değiştirildi', 'success');
+    document.getElementById('oldPass').value = '';
+    document.getElementById('newPass').value = '';
+  } catch(e) {
+    toast('Hata: ' + e.message, 'error');
+  }
+});
+
+// ============================================================================
+// UTILS
+// ============================================================================
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function shortPath(p) {
+  if (!p) return '';
+  const parts = p.split(/[\\/]/);
+  return parts.slice(-2).join('/');
+}
+
+function uptimeFormat(ms) {
+  if (!ms || ms < 0) return '0s';
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}g ${h}sa`;
+  if (h > 0) return `${h}sa ${m}dk`;
+  if (m > 0) return `${m}dk`;
+  return s + 'sn';
+}
+
+function toast(msg, type = '') {
+  const wrap = document.getElementById('toastWrap');
+  const div = document.createElement('div');
+  div.className = 'toast ' + type;
+  div.textContent = msg;
+  wrap.appendChild(div);
+  setTimeout(() => {
+    div.style.transition = 'opacity 0.3s';
+    div.style.opacity = '0';
+    setTimeout(() => div.remove(), 300);
+  }, 3000);
+}
+
+// ============================================================================
+// INIT
+// ============================================================================
+if (token && currentUser) {
+  showApp();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Personel Bilgi Merkezi · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>📖 Personel Bilgi Merkezi</h1>
+            <p>Kıyafet dökümanları, telsiz kodları ve personel rehberi</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 220px 1fr; gap: 18px;">
+            <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 14px; padding: 14px; height: fit-content;">
+                <div id="categoriesList">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </div>
+            
+            <div id="articlesContainer">
+                <div class="empty"><div class="empty-icon">📁</div>Bir kategori seç</div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('handbook');
+
+let currentCat = null;
+
+async function loadCategories() {
+    try {
+        const res = await api.get('/handbook/categories');
+        const cats = res.data;
+        
+        document.getElementById('categoriesList').innerHTML = cats.map(c => `
+            <button onclick="selectCat(${c.id})" class="settings-tab-link ${currentCat === c.id ? 'active' : ''}" style="width: 100%; margin-bottom: 4px;">
+                <span class="tab-icon">${c.icon}</span>
+                <span>${escapeHtml(c.name)}</span>
+            </button>
+        `).join('');
+    } catch (err) {
+        document.getElementById('categoriesList').innerHTML = `<div class="empty">${err.message}</div>`;
+    }
+}
+
+async function selectCat(id) {
+    currentCat = id;
+    loadCategories();
+    
+    try {
+        const res = await api.get('/handbook/articles?category_id=' + id);
+        const articles = res.data;
+        
+        const c = document.getElementById('articlesContainer');
+        if (!articles.length) {
+            c.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Bu kategoride makale yok</div>';
+            return;
+        }
+        
+        c.innerHTML = articles.map(a => `
+            <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 14px; cursor: pointer;" onclick="viewArticle(${a.id})">
+                <h3 style="color: #fff; font-size: 16px; margin-bottom: 6px;">${escapeHtml(a.title)}</h3>
+                <p style="color: var(--text-mute); font-size: 12px;">Yazar: ${escapeHtml(a.author_name || 'Bilinmiyor')} · ${formatDate(a.created_at)}</p>
+            </div>
+        `).join('');
+    } catch (err) {
+        document.getElementById('articlesContainer').innerHTML = `<div class="empty">${err.message}</div>`;
+    }
+}
+
+async function viewArticle(id) {
+    try {
+        const res = await api.get('/handbook/articles/' + id);
+        const a = res.data;
+        
+        showModal({
+            title: escapeHtml(a.title),
+            subtitle: `Yazar: ${a.author_name || 'Bilinmiyor'} · ${formatDate(a.created_at)}`,
+            size: 'xl',
+            body: `
+                <div style="background: var(--bg-3); padding: 20px; border-radius: 12px; line-height: 1.8; color: #fff; white-space: pre-wrap; font-size: 14px;">
+                    ${escapeHtml(a.content)}
+                </div>
+            `,
+            buttons: [
+                { id: 'close', label: 'Kapat', class: 'btn-ghost', onClick: closeModal },
+            ],
+        });
+    } catch (err) { showError(err.message); }
+}
+
+loadCategories();
+</script>
+</body>
+</html>

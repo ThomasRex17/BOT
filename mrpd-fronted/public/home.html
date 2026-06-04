@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mission Row PD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+/* Temiz footer — Kateshi yazıları kaldırıldı, arka planla uyumlu */
+.home-footer {
+    text-align: center;
+    padding: 26px 20px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.42);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.28);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.home-footer a {
+    color: rgba(255,255,255,0.65);
+    text-decoration: none;
+}
+.home-footer a:hover { color: #fff; }
+.home-footer .sep { opacity: 0.4; margin: 0 8px; }
+</style>
+</head>
+<body>
+
+<div id="navContainer"></div>
+
+<section class="hero">
+    <div class="hero-badge" data-brand-name>NOA Roleplay</div>
+    
+    <h1 data-brand-name>Mission Row PD</h1>
+    
+    <div class="hero-actions">
+        <a href="/apply.html" class="hero-btn hero-btn-primary">
+            ⚠️ ŞİMDİ BAŞVUR
+        </a>
+        <a href="https://discord.gg/mrpd" class="hero-btn hero-btn-ghost" target="_blank">
+            💬 DISCORD
+        </a>
+    </div>
+    
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <div class="hero-stat-value" id="statYears">0</div>
+            <div class="hero-stat-label">Yıllık Deneyim</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-value" id="statPersonnel">—</div>
+            <div class="hero-stat-label">Aktif Personel</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-value">7/24</div>
+            <div class="hero-stat-label">Aktif Hizmet</div>
+        </div>
+    </div>
+</section>
+
+<footer class="home-footer">
+    © 2026 <span data-brand-name>Mission Row PD</span>
+    <span class="sep">·</span>
+    Tüm hakları saklıdır
+    <span class="sep">·</span>
+    <a href="https://discord.gg/mrpd" target="_blank">Discord</a>
+</footer>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/pub-nav.js"></script>
+<script>
+document.getElementById('navContainer').innerHTML = renderPubNav('home');
+
+// ─── Count-up animasyonu ──────────────────────────────────
+// Hedef sayıya 1.2 sn içinde easing ile çıksın. Sıfırdan başlar,
+// ilk yüklemede hero stat'ları "0 → 27" şeklinde sayar.
+function countUp(el, target, opts = {}) {
+    const duration = opts.duration || 1200;
+    const suffix = opts.suffix || '';
+    const start = performance.now();
+    const initial = 0;
+    function tick(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+        const val = Math.round(initial + (target - initial) * eased);
+        el.textContent = val + suffix;
+        if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+// Sabit değerler hemen anime olsun
+window.addEventListener('load', () => {
+    const yearsEl = document.getElementById('statYears');
+    if (yearsEl) countUp(yearsEl, 2, { suffix: '+', duration: 900 });
+});
+
+async function loadStats() {
+    try {
+        const data = await fetchPublic('/personnel/public');
+        const count = (data.data || []).length;
+        const el = document.getElementById('statPersonnel');
+        // İlk yüklemede "—" gösteriyor — count-up ile değiştir.
+        // Yeniden çağrılarsa (30 sn'lik refresh) direkt göster, animasyon olmadan.
+        if (el.textContent === '—') {
+            countUp(el, count, { suffix: '+', duration: 1400 });
+        } else {
+            el.textContent = `${count}+`;
+        }
+    } catch {}
+}
+
+loadStats();
+setInterval(loadStats, 30000);
+</script>
+</body>
+</html>

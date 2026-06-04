@@ -1,0 +1,193 @@
+/* ============================================
+   MRPD - 6 Departman Tema Sistemi
+   ============================================ */
+
+/* ===== MRPD (varsayılan - mavi/indigo) ===== */
+:root,
+[data-theme="mrpd"] {
+    --brand-name: 'Mission Row PD';
+    --brand-tagline: 'Los Santos Police Department';
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: #818cf8;
+    --primary-glow: rgba(99, 102, 241, 0.4);
+    --primary-soft: rgba(99, 102, 241, 0.12);
+    --accent: #4f46e5;
+    --bg-1: #0a0e1f;
+    --bg-2: #111827;
+    --bg-3: #1e293b;
+    --bg-card: rgba(30, 41, 59, 0.6);
+    --bg-card-hover: rgba(30, 41, 59, 0.85);
+    --border: rgba(99, 102, 241, 0.18);
+    --border-strong: rgba(99, 102, 241, 0.35);
+    --text: #e2e8f0;
+    --text-mute: #94a3b8;
+    --text-dim: #cbd5e1;
+    --hero-pattern: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.05));
+}
+
+/* ===== LSPD (koyu lacivert/mavi) ===== */
+[data-theme="lspd"] {
+    --brand-name: 'LSPD';
+    --brand-tagline: 'Los Santos Police Department';
+    --primary: #1e40af;
+    --primary-hover: #1e3a8a;
+    --primary-light: #3b82f6;
+    --primary-glow: rgba(30, 64, 175, 0.5);
+    --primary-soft: rgba(30, 64, 175, 0.15);
+    --accent: #2563eb;
+    --bg-1: #050816;
+    --bg-2: #0a1128;
+    --bg-3: #131e3f;
+    --bg-card: rgba(19, 30, 63, 0.65);
+    --bg-card-hover: rgba(19, 30, 63, 0.9);
+    --border: rgba(59, 130, 246, 0.18);
+    --border-strong: rgba(59, 130, 246, 0.4);
+    --hero-pattern: linear-gradient(135deg, rgba(30, 64, 175, 0.15), rgba(15, 23, 42, 0.05));
+}
+
+/* ===== BCSO (turuncu) ===== */
+[data-theme="bcso"] {
+    --brand-name: 'BCSO';
+    --brand-tagline: 'Blaine County Sheriff Office';
+    --primary: #ea580c;
+    --primary-hover: #c2410c;
+    --primary-light: #fb923c;
+    --primary-glow: rgba(234, 88, 12, 0.5);
+    --primary-soft: rgba(234, 88, 12, 0.15);
+    --accent: #f97316;
+    --bg-1: #0a0805;
+    --bg-2: #1a0e05;
+    --bg-3: #2a1810;
+    --bg-card: rgba(42, 24, 16, 0.7);
+    --bg-card-hover: rgba(42, 24, 16, 0.92);
+    --border: rgba(234, 88, 12, 0.22);
+    --border-strong: rgba(234, 88, 12, 0.45);
+    --hero-pattern: linear-gradient(135deg, rgba(234, 88, 12, 0.18), rgba(0, 0, 0, 0.05));
+}
+
+/* ===== LSSD (altın) ===== */
+[data-theme="lssd"] {
+    --brand-name: 'LSSD';
+    --brand-tagline: 'Los Santos Sheriff Department';
+    --primary: #f59e0b;
+    --primary-hover: #d97706;
+    --primary-light: #fbbf24;
+    --primary-glow: rgba(245, 158, 11, 0.5);
+    --primary-soft: rgba(245, 158, 11, 0.15);
+    --accent: #eab308;
+    --bg-1: #0a0805;
+    --bg-2: #1a1305;
+    --bg-3: #2a2015;
+    --bg-card: rgba(42, 32, 21, 0.7);
+    --bg-card-hover: rgba(42, 32, 21, 0.92);
+    --border: rgba(245, 158, 11, 0.22);
+    --border-strong: rgba(245, 158, 11, 0.45);
+    --hero-pattern: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(0, 0, 0, 0.05));
+}
+
+/* ===== SAST (yeşil) ===== */
+[data-theme="sast"] {
+    --brand-name: 'SAST';
+    --brand-tagline: 'San Andreas State Trooper';
+    --primary: #16a34a;
+    --primary-hover: #15803d;
+    --primary-light: #4ade80;
+    --primary-glow: rgba(22, 163, 74, 0.5);
+    --primary-soft: rgba(22, 163, 74, 0.15);
+    --accent: #22c55e;
+    --bg-1: #050a07;
+    --bg-2: #0a1810;
+    --bg-3: #15281c;
+    --bg-card: rgba(21, 40, 28, 0.7);
+    --bg-card-hover: rgba(21, 40, 28, 0.92);
+    --border: rgba(22, 163, 74, 0.22);
+    --border-strong: rgba(22, 163, 74, 0.45);
+    --hero-pattern: linear-gradient(135deg, rgba(22, 163, 74, 0.18), rgba(0, 0, 0, 0.05));
+}
+
+/* ===== FBI (gri) ===== */
+[data-theme="fbi"] {
+    --brand-name: 'FBI';
+    --brand-tagline: 'Federal Bureau of Investigation';
+    --primary: #475569;
+    --primary-hover: #334155;
+    --primary-light: #64748b;
+    --primary-glow: rgba(71, 85, 105, 0.5);
+    --primary-soft: rgba(71, 85, 105, 0.15);
+    --accent: #64748b;
+    --bg-1: #050507;
+    --bg-2: #0e0e12;
+    --bg-3: #1a1a20;
+    --bg-card: rgba(26, 26, 32, 0.7);
+    --bg-card-hover: rgba(26, 26, 32, 0.92);
+    --border: rgba(100, 116, 139, 0.22);
+    --border-strong: rgba(100, 116, 139, 0.45);
+    --hero-pattern: linear-gradient(135deg, rgba(100, 116, 139, 0.18), rgba(0, 0, 0, 0.05));
+}
+
+/* ===== TEMA SEÇİCİ (sağ alt) ===== */
+.theme-switcher {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.theme-toggle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 8px 24px var(--primary-glow);
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    transition: all 0.2s;
+}
+.theme-toggle:hover { transform: scale(1.1) rotate(15deg); }
+
+.theme-options {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+    min-width: 180px;
+}
+.theme-options.show { display: flex; }
+
+.theme-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s;
+    text-align: left;
+}
+.theme-opt:hover { background: var(--primary-soft); color: #fff; }
+.theme-opt.active { background: var(--primary-soft); border-color: var(--border-strong); color: #fff; }
+
+.theme-color {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}

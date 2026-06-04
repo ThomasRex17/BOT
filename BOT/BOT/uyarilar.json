@@ -1,0 +1,1334 @@
+{
+    "706697230769324133": {
+        "yazili": [
+            {
+                "id": 1,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.34.26",
+                "zaman": 1778960066291,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "966824343113973811": {
+        "yazili": [
+            {
+                "id": 2,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.34.27",
+                "zaman": 1778960067329,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1486803159962878084": {
+        "yazili": [
+            {
+                "id": 3,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.34.28",
+                "zaman": 1778960068291,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1177976979019018244": {
+        "yazili": [
+            {
+                "id": 4,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.34.29",
+                "zaman": 1778960069280,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1455227588485316621": {
+        "yazili": [
+            {
+                "id": 5,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.33",
+                "zaman": 1778960553343,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1413663365116461057": {
+        "yazili": [
+            {
+                "id": 6,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.34",
+                "zaman": 1778960554392,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1409893771121787060": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "1357053113902698650": {
+        "yazili": [
+            {
+                "id": 8,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.36",
+                "zaman": 1778960556917,
+                "maxAsildi": false
+            },
+            {
+                "id": 86,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.50",
+                "zaman": 1780092110012,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1234973737171025981": {
+        "yazili": [
+            {
+                "id": 9,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.37",
+                "zaman": 1778960557970,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1129730250234937437": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "1070665518408806490": {
+        "yazili": [
+            {
+                "id": 101,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.19",
+                "zaman": 1780092139168,
+                "maxAsildi": false
+            },
+            {
+                "id": 111,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu mesai saatinde bulunmama (Önceden olan uyarı hata sonucu silindiği için tekrar yazıldı)",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 11.46.50",
+                "zaman": 1780130810236,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "910046666244112427": {
+        "yazili": [
+            {
+                "id": 12,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.41",
+                "zaman": 1778960561294,
+                "maxAsildi": false
+            },
+            {
+                "id": 82,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.41",
+                "zaman": 1780092101993,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "655410524644704257": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "634469300941619213": {
+        "yazili": [
+            {
+                "id": 14,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.44",
+                "zaman": 1778960564786,
+                "maxAsildi": false
+            },
+            {
+                "id": 69,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.15",
+                "zaman": 1780092075274,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "481169794264203276": {
+        "yazili": [
+            {
+                "id": 15,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.46",
+                "zaman": 1778960566969,
+                "maxAsildi": false
+            },
+            {
+                "id": 93,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.01",
+                "zaman": 1780092121877,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "289429093278023690": {
+        "yazili": [
+            {
+                "id": 16,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.47",
+                "zaman": 1778960567969,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "264823655169654786": {
+        "yazili": [
+            {
+                "id": 112,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Deneme",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "31.05.2026 23.52.58",
+                "zaman": 1780260778487,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "567405888256606208": {
+        "yazili": [
+            {
+                "id": 18,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.51",
+                "zaman": 1778960571357,
+                "maxAsildi": false
+            },
+            {
+                "id": 72,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.20",
+                "zaman": 1780092080360,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "518743098189414412": {
+        "yazili": [
+            {
+                "id": 19,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.55",
+                "zaman": 1778960575831,
+                "maxAsildi": false
+            },
+            {
+                "id": 73,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.22",
+                "zaman": 1780092082548,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "304137144861982720": {
+        "yazili": [
+            {
+                "id": 20,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.56",
+                "zaman": 1778960576827,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "486089107743703040": {
+        "yazili": [
+            {
+                "id": 21,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.58",
+                "zaman": 1778960578766,
+                "maxAsildi": false
+            },
+            {
+                "id": 75,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.27",
+                "zaman": 1780092087176,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "465204924859416607": {
+        "yazili": [
+            {
+                "id": 22,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.42.59",
+                "zaman": 1778960579743,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1307769076843548802": {
+        "yazili": [
+            {
+                "id": 23,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.01",
+                "zaman": 1778960581302,
+                "maxAsildi": false
+            },
+            {
+                "id": 76,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.29",
+                "zaman": 1780092089786,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "489483785855959050": {
+        "yazili": [
+            {
+                "id": 24,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.02",
+                "zaman": 1778960582262,
+                "maxAsildi": false
+            },
+            {
+                "id": 78,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.34",
+                "zaman": 1780092094544,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "709058120114110514": {
+        "yazili": [
+            {
+                "id": 25,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.05",
+                "zaman": 1778960585832,
+                "maxAsildi": false
+            },
+            {
+                "id": 79,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.36",
+                "zaman": 1780092096771,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "876255046382264350": {
+        "yazili": [
+            {
+                "id": 26,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.07",
+                "zaman": 1778960587002,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "504705246669570055": {
+        "yazili": [
+            {
+                "id": 27,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.08",
+                "zaman": 1778960588134,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "195707457002143744": {
+        "yazili": [
+            {
+                "id": 28,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.10",
+                "zaman": 1778960590075,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "585067703916560425": {
+        "yazili": [
+            {
+                "id": 29,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.11",
+                "zaman": 1778960591278,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "960138793179041802": {
+        "yazili": [
+            {
+                "id": 30,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.13",
+                "zaman": 1778960593308,
+                "maxAsildi": false
+            },
+            {
+                "id": 81,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.40",
+                "zaman": 1780092100123,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1480969807548514335": {
+        "yazili": [
+            {
+                "id": 31,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.15",
+                "zaman": 1778960595896,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "329709019574829057": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "257432909902774272": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "249335810090991617": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "1054838723109457940": {
+        "yazili": [
+            {
+                "id": 35,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.20",
+                "zaman": 1778960600960,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1180325627795095562": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "297428690894323714": {
+        "yazili": [
+            {
+                "id": 37,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.26",
+                "zaman": 1778960606489,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "974757771050356758": {
+        "yazili": [
+            {
+                "id": 38,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.28",
+                "zaman": 1778960608394,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "876049859197673474": {
+        "yazili": [
+            {
+                "id": 39,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.29",
+                "zaman": 1778960609545,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "840967557900009492": {
+        "yazili": [
+            {
+                "id": 40,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.30",
+                "zaman": 1778960610661,
+                "maxAsildi": false
+            },
+            {
+                "id": 95,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.04",
+                "zaman": 1780092124528,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "419559275879202826": {
+        "yazili": [
+            {
+                "id": 41,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.31",
+                "zaman": 1778960611745,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "307968931291725825": {
+        "yazili": [
+            {
+                "id": 42,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.32",
+                "zaman": 1778960612879,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "202485093686706186": {
+        "yazili": [
+            {
+                "id": 43,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.33",
+                "zaman": 1778960613967,
+                "maxAsildi": false
+            },
+            {
+                "id": 96,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.06",
+                "zaman": 1780092126577,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "597475711988793345": {
+        "yazili": [
+            {
+                "id": 44,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.35",
+                "zaman": 1778960615000,
+                "maxAsildi": false
+            },
+            {
+                "id": 97,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.07",
+                "zaman": 1780092127872,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "711361805464633447": {
+        "yazili": [
+            {
+                "id": 45,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.36",
+                "zaman": 1778960616153,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "397401193325789184": {
+        "yazili": [
+            {
+                "id": 46,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.37",
+                "zaman": 1778960617721,
+                "maxAsildi": false
+            },
+            {
+                "id": 98,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.09",
+                "zaman": 1780092129773,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "349734133020229632": {
+        "yazili": [
+            {
+                "id": 47,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.38",
+                "zaman": 1778960618859,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "780430541471350835": {
+        "yazili": [
+            {
+                "id": 48,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.40",
+                "zaman": 1778960620089,
+                "maxAsildi": false
+            },
+            {
+                "id": 99,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.12",
+                "zaman": 1780092132023,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "865143954101895168": {
+        "yazili": [
+            {
+                "id": 49,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.41",
+                "zaman": 1778960621237,
+                "maxAsildi": false
+            },
+            {
+                "id": 100,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.14",
+                "zaman": 1780092134685,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "881525064451915798": {
+        "yazili": [
+            {
+                "id": 50,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.42",
+                "zaman": 1778960622344,
+                "maxAsildi": false
+            },
+            {
+                "id": 102,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.21",
+                "zaman": 1780092141143,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "586935281861787648": {
+        "yazili": [
+            {
+                "id": 51,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.44",
+                "zaman": 1778960624252,
+                "maxAsildi": false
+            },
+            {
+                "id": 104,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.24",
+                "zaman": 1780092144722,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "419933018543882243": {
+        "yazili": [
+            {
+                "id": 52,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.45",
+                "zaman": 1778960625266,
+                "maxAsildi": false
+            },
+            {
+                "id": 107,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.31",
+                "zaman": 1780092151532,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1496182039056089283": {
+        "yazili": [
+            {
+                "id": 53,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.48",
+                "zaman": 1778960628175,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "700390006367191050": {
+        "yazili": [
+            {
+                "id": 54,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.49",
+                "zaman": 1778960629421,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "976904488608751628": {
+        "yazili": [
+            {
+                "id": 55,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.50",
+                "zaman": 1778960630879,
+                "maxAsildi": false
+            },
+            {
+                "id": 109,
+                "tip": "yazili",
+                "kademe": 2,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.36",
+                "zaman": 1780092156012,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "520608288841400320": {
+        "yazili": [
+            {
+                "id": 56,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.52",
+                "zaman": 1778960632004,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "376090818680979456": {
+        "yazili": [
+            {
+                "id": 57,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.54",
+                "zaman": 1778960634093,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "703907649946779718": {
+        "yazili": [
+            {
+                "id": 58,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu mesai saatinde bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "16.05.2026 22.43.55",
+                "zaman": 1778960635199,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "723652132485595177": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "565773557737455622": {
+        "yazili": [
+            {
+                "id": 83,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.43",
+                "zaman": 1780092103833,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": [
+            {
+                "id": 62,
+                "tip": "sozlu",
+                "sebep": "Disiplinsizlik",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "19.05.2026 17.12.06",
+                "zaman": 1779199926490
+            }
+        ]
+    },
+    "317969321920036865": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "1333185978126303365": {
+        "yazili": [
+            {
+                "id": 68,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.12",
+                "zaman": 1780092072205,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "331826665019801602": {
+        "yazili": [
+            {
+                "id": 70,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.17",
+                "zaman": 1780092077356,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1374596091588120590": {
+        "yazili": [],
+        "sozlu": []
+    },
+    "1228424074502471761": {
+        "yazili": [
+            {
+                "id": 80,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.38",
+                "zaman": 1780092098680,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1197563612257058846": {
+        "yazili": [
+            {
+                "id": 87,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.51",
+                "zaman": 1780092111274,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1449191588377919519": {
+        "yazili": [
+            {
+                "id": 89,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.54",
+                "zaman": 1780092114731,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1412049524347895868": {
+        "yazili": [
+            {
+                "id": 91,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.01.59",
+                "zaman": 1780092119038,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1073762357848842250": {
+        "yazili": [
+            {
+                "id": 92,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.00",
+                "zaman": 1780092120520,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1292899490151534736": {
+        "yazili": [
+            {
+                "id": 94,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.03",
+                "zaman": 1780092123246,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "738379088422502490": {
+        "yazili": [
+            {
+                "id": 103,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.23",
+                "zaman": 1780092143198,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1353023815034077246": {
+        "yazili": [
+            {
+                "id": 105,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.26",
+                "zaman": 1780092146054,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "972593098548985896": {
+        "yazili": [
+            {
+                "id": 106,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.27",
+                "zaman": 1780092147399,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "1138611029199306774": {
+        "yazili": [
+            {
+                "id": 108,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.34",
+                "zaman": 1780092154669,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    },
+    "875459426230878219": {
+        "yazili": [
+            {
+                "id": 110,
+                "tip": "yazili",
+                "kademe": 1,
+                "sebep": "Zorunlu Mesaide Mazeretsiz Bulunmama",
+                "verenId": "723652132485595177",
+                "verenTag": "thomasrex",
+                "tarih": "30.05.2026 01.02.39",
+                "zaman": 1780092159029,
+                "maxAsildi": false
+            }
+        ],
+        "sozlu": []
+    }
+}

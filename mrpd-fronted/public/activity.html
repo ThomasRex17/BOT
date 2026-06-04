@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Aktivite Logu · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+/* ─── Filtre paneli ────────────────────────────────────────── */
+.act-filters {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+}
+.act-filter-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr auto auto;
+    gap: 10px;
+    align-items: end;
+}
+@media (max-width: 1100px) {
+    .act-filter-row { grid-template-columns: 1fr 1fr; }
+    .act-filter-row > button { grid-column: span 1; }
+}
+.act-field { display: flex; flex-direction: column; min-width: 0; }
+.act-field label {
+    font-size: 10px; color: var(--text-mute);
+    text-transform: uppercase; letter-spacing: 0.7px;
+    margin-bottom: 6px; font-weight: 600;
+}
+.act-field input,
+.act-field select {
+    width: 100%;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    transition: border-color var(--dur-base, 240ms) var(--ease-out, cubic-bezier(0.16,1,0.3,1)),
+                box-shadow var(--dur-base, 240ms) var(--ease-out);
+}
+.act-field input:focus,
+.act-field select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-soft, rgba(99,102,241,0.18));
+}
+
+/* Hızlı tarih preset'leri */
+.act-presets {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-top: 12px;
+}
+.act-preset-btn {
+    padding: 5px 12px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-mute);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+    font-family: inherit;
+}
+.act-preset-btn:hover {
+    color: #fff;
+    border-color: var(--border-strong);
+    background: rgba(255,255,255,0.05);
+}
+.act-preset-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+/* Üst toolbar — sayım, sayfa boyutu, auto-refresh, export */
+.act-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.act-count {
+    color: var(--text-mute);
+    font-size: 13px;
+}
+.act-count strong { color: #fff; }
+.act-toolbar-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.act-mini-btn {
+    padding: 7px 12px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: all var(--dur-base) var(--ease-out);
+}
+.act-mini-btn:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--border-strong);
+}
+.act-mini-btn.active {
+    border-color: var(--primary);
+    color: var(--primary-light, #a5b4fc);
+}
+.act-mini-btn .pulse-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 4px #4ade80;
+    animation: live-blink 1.4s infinite;
+}
+@keyframes live-blink {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.7); }
+    70%      { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+}
+.act-page-size {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-mute);
+}
+.act-page-size select {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    color: var(--text);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ─── Tablo cilası ─────────────────────────────────────────── */
+.dt th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-3);
+    z-index: 1;
+    backdrop-filter: blur(4px);
+}
+.dt tbody tr {
+    transition: background var(--dur-fast, 150ms) var(--ease-out);
+}
+.dt tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+/* Action-type rozetleri — renkli ikonlu */
+.action-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0.2px;
+    color: #fff;
+    background: var(--badge-bg, rgba(99,102,241,0.18));
+    border: 1px solid var(--badge-border, rgba(99,102,241,0.3));
+    white-space: nowrap;
+}
+.action-badge::before {
+    content: var(--badge-icon, '•');
+    font-size: 11px;
+}
+.action-badge.act-create  { --badge-bg: rgba(34,197,94,0.18);  --badge-border: rgba(34,197,94,0.3);  --badge-icon: '＋'; color:#86efac; }
+.action-badge.act-update  { --badge-bg: rgba(59,130,246,0.18); --badge-border: rgba(59,130,246,0.3); --badge-icon: '✎';  color:#93c5fd; }
+.action-badge.act-delete  { --badge-bg: rgba(239,68,68,0.18);  --badge-border: rgba(239,68,68,0.3);  --badge-icon: '🗑'; color:#fca5a5; }
+.action-badge.act-login   { --badge-bg: rgba(168,85,247,0.18); --badge-border: rgba(168,85,247,0.3); --badge-icon: '→';  color:#d8b4fe; }
+.action-badge.act-reset   { --badge-bg: rgba(245,158,11,0.18); --badge-border: rgba(245,158,11,0.3); --badge-icon: '⟲';  color:#fcd34d; }
+.action-badge.act-rank    { --badge-bg: rgba(99,102,241,0.18); --badge-border: rgba(99,102,241,0.3); --badge-icon: '★';  color:#a5b4fc; }
+.action-badge.act-other   { --badge-bg: rgba(255,255,255,0.08);--badge-border: rgba(255,255,255,0.15); --badge-icon: '•'; color:#cbd5e1; }
+
+/* Detay butonu */
+.dt .detail-link {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all var(--dur-base) var(--ease-out);
+}
+.dt .detail-link:hover {
+    color: var(--primary-light);
+    border-color: var(--primary);
+    background: var(--primary-soft);
+}
+
+/* Skeleton satırlar */
+.skeleton-row td {
+    padding: 12px;
+}
+.skel-bar {
+    height: 12px;
+    border-radius: 4px;
+    background: linear-gradient(90deg,
+        rgba(255,255,255,0.06) 0%,
+        rgba(255,255,255,0.14) 50%,
+        rgba(255,255,255,0.06) 100%);
+    background-size: 200% 100%;
+    animation: p1-shimmer 1.4s infinite linear;
+}
+
+/* Tablo girişi animasyonu */
+.dt tbody tr.act-row {
+    animation: p1-fade-up 0.3s var(--ease-out) both;
+}
+.dt tbody tr.act-row:nth-child(1)  { animation-delay: 20ms; }
+.dt tbody tr.act-row:nth-child(2)  { animation-delay: 40ms; }
+.dt tbody tr.act-row:nth-child(3)  { animation-delay: 60ms; }
+.dt tbody tr.act-row:nth-child(4)  { animation-delay: 80ms; }
+.dt tbody tr.act-row:nth-child(5)  { animation-delay: 100ms; }
+.dt tbody tr.act-row:nth-child(6)  { animation-delay: 120ms; }
+.dt tbody tr.act-row:nth-child(7)  { animation-delay: 140ms; }
+.dt tbody tr.act-row:nth-child(8)  { animation-delay: 160ms; }
+.dt tbody tr.act-row:nth-child(n+9) { animation-delay: 180ms; }
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>📜 Aktivite Logu</h1>
+            <p>Sistemde yapılan tüm işlemlerin kaydı</p>
+        </div>
+        
+        <!-- FİLTRELER -->
+        <div class="act-filters">
+            <div class="act-filter-row">
+                <div class="act-field">
+                    <label>Yapılan işlem</label>
+                    <select id="filterAction">
+                        <option value="">Tüm işlemler</option>
+                    </select>
+                </div>
+                <div class="act-field">
+                    <label>Yapan (kimlik no veya ad)</label>
+                    <input id="filterActor" placeholder="örn: 184021" />
+                </div>
+                <div class="act-field">
+                    <label>İşlem gören (kimlik no veya ad)</label>
+                    <input id="filterTarget" placeholder="örn: 880288" />
+                </div>
+                <div class="act-field">
+                    <label>Başlangıç tarihi</label>
+                    <input id="filterFrom" type="date" />
+                </div>
+                <div class="act-field">
+                    <label>Bitiş tarihi</label>
+                    <input id="filterTo" type="date" />
+                </div>
+                <button class="btn btn-primary" onclick="applyFilters()">Filtrele</button>
+                <button class="btn btn-ghost" onclick="clearFilters()">Temizle</button>
+            </div>
+            <!-- Hızlı tarih preset'leri -->
+            <div class="act-presets">
+                <span style="color:var(--text-mute); font-size:11px; margin-right:4px;">Hızlı:</span>
+                <button class="act-preset-btn" data-preset="today">Bugün</button>
+                <button class="act-preset-btn" data-preset="yesterday">Dün</button>
+                <button class="act-preset-btn" data-preset="7d">Son 7 gün</button>
+                <button class="act-preset-btn" data-preset="30d">Son 30 gün</button>
+                <button class="act-preset-btn" data-preset="thisMonth">Bu ay</button>
+                <button class="act-preset-btn" data-preset="lastMonth">Geçen ay</button>
+            </div>
+        </div>
+        
+        <!-- TOOLBAR: sayım sol, kontroller sağ -->
+        <div class="act-toolbar">
+            <div class="act-count" id="totalCount">Yükleniyor...</div>
+            <div class="act-toolbar-right">
+                <span class="act-page-size">
+                    Sayfa başına:
+                    <select id="pageSize">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                </span>
+                <button class="act-mini-btn" id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Açıkken her 30 sn'de bir yeniler">
+                    <span id="arDot"></span>
+                    <span>Otomatik yenile</span>
+                </button>
+                <button class="act-mini-btn" onclick="loadLogs(currentPage)" title="Yenile">
+                    🔄 <span>Yenile</span>
+                </button>
+                <button class="act-mini-btn" onclick="exportCSV()" title="Filtrelenmiş kayıtları CSV indir">
+                    ⬇ <span>CSV</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-card">
+            <table class="dt">
+                <thead>
+                    <tr>
+                        <th style="width:140px;">Tarih</th>
+                        <th>İşlem</th>
+                        <th>Yapan</th>
+                        <th>İşlem Gören</th>
+                        <th>Özet</th>
+                        <th style="width:80px; text-align:right;"></th>
+                    </tr>
+                </thead>
+                <tbody id="logBody">
+                    <!-- Skeleton 5 satır -->
+                    <tr class="skeleton-row"><td><div class="skel-bar" style="width:110px;"></div></td><td><div class="skel-bar" style="width:130px;"></div></td><td><div class="skel-bar" style="width:90px;"></div></td><td><div class="skel-bar" style="width:90px;"></div></td><td><div class="skel-bar" style="width:90%;"></div></td><td><div class="skel-bar" style="width:50px; margin-left:auto;"></div></td></tr>
+                    <tr class="skeleton-row"><td><div class="skel-bar" style="width:110px;"></div></td><td><div class="skel-bar" style="width:160px;"></div></td><td><div class="skel-bar" style="width:80px;"></div></td><td><div class="skel-bar" style="width:100px;"></div></td><td><div class="skel-bar" style="width:75%;"></div></td><td><div class="skel-bar" style="width:50px; margin-left:auto;"></div></td></tr>
+                    <tr class="skeleton-row"><td><div class="skel-bar" style="width:110px;"></div></td><td><div class="skel-bar" style="width:120px;"></div></td><td><div class="skel-bar" style="width:90px;"></div></td><td><div class="skel-bar" style="width:90px;"></div></td><td><div class="skel-bar" style="width:85%;"></div></td><td><div class="skel-bar" style="width:50px; margin-left:auto;"></div></td></tr>
+                    <tr class="skeleton-row"><td><div class="skel-bar" style="width:110px;"></div></td><td><div class="skel-bar" style="width:140px;"></div></td><td><div class="skel-bar" style="width:70px;"></div></td><td><div class="skel-bar" style="width:110px;"></div></td><td><div class="skel-bar" style="width:65%;"></div></td><td><div class="skel-bar" style="width:50px; margin-left:auto;"></div></td></tr>
+                    <tr class="skeleton-row"><td><div class="skel-bar" style="width:110px;"></div></td><td><div class="skel-bar" style="width:155px;"></div></td><td><div class="skel-bar" style="width:85px;"></div></td><td><div class="skel-bar" style="width:80px;"></div></td><td><div class="skel-bar" style="width:80%;"></div></td><td><div class="skel-bar" style="width:50px; margin-left:auto;"></div></td></tr>
+                </tbody>
+            </table>
+            <div id="paginationContainer" class="pag"></div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.require(PERM.PAGE_ACTIVITY)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('activity');
+
+let currentPage = 1;
+let autoRefreshTimer = null;
+let lastItems = []; // CSV export için saklıyoruz
+
+// ─── action_type → renkli badge sınıfı eşlemesi ───────────
+// Backend ne dönerse dönsün, key kelimelerine göre renk veriyoruz.
+function badgeClassFor(actionType, actionLabel) {
+    const k = `${actionType || ''} ${actionLabel || ''}`.toLowerCase();
+    if (/oluşturuldu|yeni|create|added/i.test(k)) return 'act-create';
+    if (/güncellendi|update|edited|değiştirildi|değişti/i.test(k)) return 'act-update';
+    if (/silindi|delete|removed|kaldırıldı/i.test(k)) return 'act-delete';
+    if (/giriş yapıldı|login|signin/i.test(k))     return 'act-login';
+    if (/sıfırlandı|reset/i.test(k))                 return 'act-reset';
+    if (/rütbe|rank|terfi|promoted/i.test(k))       return 'act-rank';
+    return 'act-other';
+}
+
+async function loadFilters() {
+    try {
+        const res = await api.get('/activity/types/list');
+        const select = document.getElementById('filterAction');
+        select.innerHTML = '<option value="">Tüm işlemler</option>';
+        (res.data || []).forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.action_type;
+            opt.textContent = `${t.action_label} (${t.count})`;
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        console.error('loadFilters:', err);
+    }
+}
+
+async function loadLogs(page = 1) {
+    currentPage = page;
+    const action_type = document.getElementById('filterAction').value;
+    const actor = document.getElementById('filterActor').value.trim();
+    const target = document.getElementById('filterTarget').value.trim();
+    const from = document.getElementById('filterFrom').value;
+    const to = document.getElementById('filterTo').value;
+    const limit = parseInt(document.getElementById('pageSize').value, 10) || 50;
+    
+    try {
+        const params = new URLSearchParams({ page, limit });
+        if (action_type) params.set('action_type', action_type);
+        if (actor)       params.set('actor', actor);
+        if (target)      params.set('target', target);
+        if (from)        params.set('from', from);
+        if (to)          params.set('to', to);
+        
+        const res = await api.get('/activity?' + params);
+        const { items, pagination } = res.data || {};
+        const list = items || [];
+        const pag = pagination || { page: 1, pages: 1, total: list.length };
+        
+        lastItems = list;
+        
+        document.getElementById('totalCount').innerHTML =
+            `Toplam <strong>${pag.total}</strong> kayıt · Sayfa <strong>${pag.page}</strong> / ${pag.pages || 1}`;
+        renderLogs(list);
+        renderPagination(pag);
+    } catch (err) {
+        document.getElementById('logBody').innerHTML =
+            `<tr><td colspan="6"><div class="empty"><div class="empty-icon">⚠️</div>${escapeHtml(err.message || 'Yüklenemedi')}</div></td></tr>`;
+        document.getElementById('paginationContainer').innerHTML = '';
+        document.getElementById('totalCount').textContent = '—';
+    }
+}
+
+function renderLogs(items) {
+    const tbody = document.getElementById('logBody');
+    if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📜</div>Bu filtreler için kayıt bulunamadı</div></td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = items.map(l => {
+        const badgeCls = badgeClassFor(l.action_type, l.action_label);
+        return `
+            <tr class="act-row">
+                <td><code style="font-size: 11px; color: var(--text-dim); white-space: nowrap;">${formatDateTime(l.created_at)}</code></td>
+                <td><span class="action-badge ${badgeCls}">${escapeHtml(l.action_label || l.action_type || '—')}</span></td>
+                <td>
+                    ${l.actor_name 
+                        ? `<div style="font-weight: 600; color: #fff; font-size: 13px;">${escapeHtml(l.actor_name)}</div>${l.actor_civ_id ? `<div style="font-size: 10px; color: var(--text-mute);">#${escapeHtml(l.actor_civ_id)}</div>` : ''}`
+                        : '<span style="color: var(--text-mute); font-size:12px;">Kimlik no —</span>'
+                    }
+                </td>
+                <td>
+                    ${l.target_name 
+                        ? `<div style="font-weight: 600; color: #fff; font-size: 13px;">${escapeHtml(l.target_name)}</div>${l.target_civ_id ? `<div style="font-size: 10px; color: var(--text-mute);">(Kimlik no ${escapeHtml(l.target_civ_id)})</div>` : ''}`
+                        : '<span style="color: var(--text-mute);">—</span>'
+                    }
+                </td>
+                <td style="color: var(--text-dim); font-size: 13px; max-width: 360px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(l.summary || '')}">${escapeHtml(l.summary || '—')}</td>
+                <td style="text-align: right;"><button class="detail-link" onclick="viewDetail(${l.id})">Detay</button></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderPagination(pag) {
+    const c = document.getElementById('paginationContainer');
+    if (!pag || pag.pages <= 1) { c.innerHTML = ''; return; }
+    
+    let html = `<button class="pag-btn" ${pag.page <= 1 ? 'disabled' : ''} onclick="loadLogs(${pag.page - 1})">← Önceki</button>`;
+    for (let i = 1; i <= pag.pages; i++) {
+        if (i === 1 || i === pag.pages || (i >= pag.page - 2 && i <= pag.page + 2)) {
+            html += `<button class="pag-btn ${i === pag.page ? 'active' : ''}" onclick="loadLogs(${i})">${i}</button>`;
+        } else if (i === pag.page - 3 || i === pag.page + 3) {
+            html += `<span style="padding: 6px;">...</span>`;
+        }
+    }
+    html += `<button class="pag-btn" ${pag.page >= pag.pages ? 'disabled' : ''} onclick="loadLogs(${pag.page + 1})">Sonraki →</button>`;
+    c.innerHTML = html;
+}
+
+async function viewDetail(id) {
+    try {
+        const res = await api.get(`/activity/${id}`);
+        const l = res.data;
+        
+        showModal({
+            title: l.action_label,
+            subtitle: formatDateTime(l.created_at),
+            size: 'lg',
+            body: `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
+                    <div style="background: var(--bg-3); padding: 14px; border-radius: 10px;">
+                        <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Yapan Kişi</div>
+                        <div style="font-size: 14px; font-weight: 600; color: #fff;">${escapeHtml(l.actor_name || '—')}</div>
+                        ${l.actor_civ_id ? `<div style="font-size: 11px; color: var(--text-mute); margin-top: 2px;">Kimlik: ${escapeHtml(l.actor_civ_id)}</div>` : ''}
+                    </div>
+                    <div style="background: var(--bg-3); padding: 14px; border-radius: 10px;">
+                        <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">İşlem Gören</div>
+                        <div style="font-size: 14px; font-weight: 600; color: #fff;">${escapeHtml(l.target_name || '—')}</div>
+                        ${l.target_civ_id ? `<div style="font-size: 11px; color: var(--text-mute); margin-top: 2px;">Kimlik: ${escapeHtml(l.target_civ_id)}</div>` : ''}
+                    </div>
+                </div>
+                
+                <div style="background: var(--bg-3); padding: 14px; border-radius: 10px; margin-bottom: 14px;">
+                    <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Özet</div>
+                    <div style="color: #fff; font-size: 14px; line-height: 1.5; word-break: break-word;">${escapeHtml(l.summary || '—')}</div>
+                </div>
+                
+                ${l.details ? `
+                    <div style="background: var(--bg-3); padding: 14px; border-radius: 10px; margin-bottom: 14px;">
+                        <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Detaylar</div>
+                        <pre style="color: #fff; font-size: 12px; white-space: pre-wrap; font-family: monospace; margin:0; max-height:240px; overflow:auto;">${escapeHtml(JSON.stringify(l.details, null, 2))}</pre>
+                    </div>
+                ` : ''}
+                
+                <div style="background: var(--bg-3); padding: 14px; border-radius: 10px;">
+                    <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">İşlem ID & IP</div>
+                    <div style="font-size: 12px; color: var(--text-dim); font-family: monospace;">#${l.id} · ${escapeHtml(l.ip_address || 'Bilinmiyor')}</div>
+                </div>
+            `,
+            buttons: [
+                { id: 'close', label: 'Kapat', class: 'btn-ghost', onClick: closeModal },
+            ],
+        });
+    } catch (err) { showError(err.message); }
+}
+
+function applyFilters() { loadLogs(1); }
+function clearFilters() {
+    document.getElementById('filterAction').value = '';
+    document.getElementById('filterActor').value = '';
+    document.getElementById('filterTarget').value = '';
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value = '';
+    document.querySelectorAll('.act-preset-btn.active').forEach(b => b.classList.remove('active'));
+    loadLogs(1);
+}
+
+// ─── Tarih preset'leri ────────────────────────────────────
+function isoDate(d) { return d.toISOString().slice(0,10); }
+function setPreset(key, btnEl) {
+    const now = new Date();
+    let from, to;
+    if (key === 'today') {
+        from = to = new Date(now);
+    } else if (key === 'yesterday') {
+        from = new Date(now); from.setDate(from.getDate() - 1);
+        to = from;
+    } else if (key === '7d') {
+        from = new Date(now); from.setDate(from.getDate() - 6);
+        to = now;
+    } else if (key === '30d') {
+        from = new Date(now); from.setDate(from.getDate() - 29);
+        to = now;
+    } else if (key === 'thisMonth') {
+        from = new Date(now.getFullYear(), now.getMonth(), 1);
+        to = now;
+    } else if (key === 'lastMonth') {
+        from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        to = new Date(now.getFullYear(), now.getMonth(), 0);
+    }
+    document.getElementById('filterFrom').value = isoDate(from);
+    document.getElementById('filterTo').value = isoDate(to);
+    document.querySelectorAll('.act-preset-btn.active').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    loadLogs(1);
+}
+document.querySelectorAll('.act-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => setPreset(btn.dataset.preset, btn));
+});
+
+// ─── Sayfa başına değişikliği ─────────────────────────────
+document.getElementById('pageSize').addEventListener('change', () => loadLogs(1));
+
+// ─── Otomatik yenile toggle ───────────────────────────────
+function toggleAutoRefresh() {
+    const btn = document.getElementById('autoRefreshBtn');
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+        btn.classList.remove('active');
+        document.getElementById('arDot').className = '';
+    } else {
+        autoRefreshTimer = setInterval(() => loadLogs(currentPage), 30000);
+        btn.classList.add('active');
+        document.getElementById('arDot').className = 'pulse-dot';
+        if (typeof showSuccess === 'function') showSuccess('Otomatik yenileme: AÇIK (30 sn)');
+    }
+}
+
+// ─── CSV export ────────────────────────────────────────────
+// Sadece şu an gösterilen sayfayı export ediyor (backend tüm sonuçları
+// indirme endpoint'i sağlarsa bu fonksiyon onu kullanabilir).
+function exportCSV() {
+    if (!lastItems.length) {
+        if (typeof showError === 'function') showError('İndirilecek kayıt yok');
+        return;
+    }
+    const headers = ['ID', 'Tarih', 'İşlem Türü', 'İşlem', 'Yapan', 'Yapan Kimlik', 'İşlem Gören', 'Gören Kimlik', 'Özet', 'IP'];
+    const csvEscape = v => {
+        const s = String(v ?? '').replace(/"/g, '""');
+        return /[",\n;]/.test(s) ? `"${s}"` : s;
+    };
+    const rows = [headers.join(',')];
+    lastItems.forEach(l => {
+        rows.push([
+            l.id, l.created_at, l.action_type || '', l.action_label || '',
+            l.actor_name || '', l.actor_civ_id || '',
+            l.target_name || '', l.target_civ_id || '',
+            l.summary || '', l.ip_address || ''
+        ].map(csvEscape).join(','));
+    });
+    // BOM ile başla → Excel UTF-8 doğru okusun
+    const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aktivite-log-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (typeof showSuccess === 'function') showSuccess(`${lastItems.length} kayıt CSV olarak indirildi`);
+}
+
+// ─── Enter tuşuyla filtre uygula ───────────────────────────
+['filterActor', 'filterTarget'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') applyFilters();
+    });
+});
+
+(async () => {
+    await loadFilters();
+    await loadLogs(1);
+})();
+</script>
+</body>
+</html>

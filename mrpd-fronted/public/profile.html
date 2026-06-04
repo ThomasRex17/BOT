@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Profil · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+</head>
+<body>
+
+<div id="navContainer"></div>
+
+<section style="max-width: 1100px; margin: 0 auto; padding: 32px;">
+    <div id="loadingDiv" class="loading">
+        <!-- Profile shimmer skeleton: kart başlığı + 5 stat + iki kutu -->
+        <div style="background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.6)); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 16px; padding: 28px; margin-bottom: 18px;">
+            <div style="display:flex; gap:20px; align-items:center;">
+                <div class="p1-skel-photo" style="width:120px; height:120px; margin:0;"></div>
+                <div style="flex:1;">
+                    <div class="p1-skel-line w-40" style="height:22px; margin:8px 0;"></div>
+                    <div class="p1-skel-line w-50" style="height:13px; margin:8px 0;"></div>
+                    <div class="p1-skel-line w-40" style="height:28px; margin:14px 0 0; max-width:140px; border-radius:999px;"></div>
+                </div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:12px; margin-bottom:18px;">
+            <div class="p1-skeleton-card" style="height:120px;">
+                <div class="p1-skel-line w-40" style="margin:6px auto;"></div>
+                <div class="p1-skel-line w-70" style="height:22px; margin:14px auto;"></div>
+            </div>
+            <div class="p1-skeleton-card" style="height:120px;">
+                <div class="p1-skel-line w-40" style="margin:6px auto;"></div>
+                <div class="p1-skel-line w-70" style="height:22px; margin:14px auto;"></div>
+            </div>
+            <div class="p1-skeleton-card" style="height:120px;">
+                <div class="p1-skel-line w-40" style="margin:6px auto;"></div>
+                <div class="p1-skel-line w-70" style="height:22px; margin:14px auto;"></div>
+            </div>
+            <div class="p1-skeleton-card" style="height:120px;">
+                <div class="p1-skel-line w-40" style="margin:6px auto;"></div>
+                <div class="p1-skel-line w-70" style="height:22px; margin:14px auto;"></div>
+            </div>
+            <div class="p1-skeleton-card" style="height:120px;">
+                <div class="p1-skel-line w-40" style="margin:6px auto;"></div>
+                <div class="p1-skel-line w-70" style="height:22px; margin:14px auto;"></div>
+            </div>
+        </div>
+    </div>
+    <div id="profileContainer" style="display: none;"></div>
+</section>
+
+<a href="https://kateshi.gg" target="_blank" class="powered">⚡ Powered by Kateshi</a>
+
+<div id="footerContainer"></div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/pub-nav.js"></script>
+<script>
+// NOT: profil sayfası hem giriş yapmadan (?id=X ile) hem de
+// "Hesabım" üzerinden (giriş yapılmış, kendi profilim) erişilebilir.
+// Bu yüzden requireStaff() KULLANMIYORUZ — sadece ?id yoksa ve giriş
+// yoksa login'e yönlendiriyoruz.
+document.getElementById('navContainer').innerHTML = renderPubNav('roster');
+document.getElementById('footerContainer').innerHTML = renderPubFooter();
+
+const urlParams = new URLSearchParams(window.location.search);
+const profileId = urlParams.get('id');
+
+if (!profileId) {
+    // ?id yoksa = "Hesabım" tıklamasıyla geldi. Kendi profilini bul.
+    (async () => {
+        // Giriş yapılmamışsa direkt login'e gönder.
+        if (!Auth.isLoggedIn()) {
+            window.location.href = '/login.html';
+            return;
+        }
+        const loadingEl = document.getElementById('loadingDiv');
+        try {
+            // 1) Önce yerel cache'deki kullanıcıyı dene
+            let me = Auth.user();
+            // 2) Eğer personnel_id yoksa backend'den güncel kullanıcıyı çek
+            if (!me || (!me.personnel_id && !me.personnelId && !me.discord_id)) {
+                me = await Auth.me().catch(() => me);
+            }
+            if (!me) {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // DEBUG: konsolda görelim ne döndüğünü
+            console.log('[profile] Auth.user():', me);
+            
+            // 3) Kullanıcıdaki personnel_id'yi kullan (her olası alan adını dene)
+            const myPid = me.personnel_id || me.personnelId || me.personnel?.id || me.pid;
+            if (myPid) {
+                window.location.replace(`/profile.html?id=${myPid}`);
+                return;
+            }
+            
+            // 4) discord_id ile public personel listesinden bul (auth gerekmez)
+            const discordId = me.discord_id || me.discordId || me.discord?.id;
+            if (discordId) {
+                try {
+                    const j = await fetchPublic('/personnel/public');
+                    const list = j?.data || j?.personnel || [];
+                    const found = list.find(p =>
+                        String(p.discord_id || p.discordId || '') === String(discordId)
+                    );
+                    if (found?.id) {
+                        window.location.replace(`/profile.html?id=${found.id}`);
+                        return;
+                    }
+                } catch {}
+            }
+            
+            // 5) Username ile bul (backend personnel.username veya ooc_name eşleşmesi olabilir)
+            const myUsername = me.username || me.discord_username;
+            if (myUsername) {
+                try {
+                    const j = await fetchPublic('/personnel/public');
+                    const list = j?.data || j?.personnel || [];
+                    const u = String(myUsername).toLowerCase();
+                    const found = list.find(p => {
+                        const candidates = [
+                            p.username,
+                            p.discord_username,
+                            p.ooc_name,
+                            p.ic_name,
+                        ].map(x => String(x || '').toLowerCase());
+                        return candidates.some(c => c === u);
+                    });
+                    if (found?.id) {
+                        window.location.replace(`/profile.html?id=${found.id}`);
+                        return;
+                    }
+                } catch {}
+            }
+            
+            // 6) Son çare: user.id'nin doğrudan personnel.id olduğunu varsay
+            if (me.id) {
+                try {
+                    const j = await api.get(`/personnel/${me.id}`).catch(() => null);
+                    if (j?.data?.id) {
+                        window.location.replace(`/profile.html?id=${me.id}`);
+                        return;
+                    }
+                } catch {}
+            }
+            
+            // 7) Hâlâ bulunamadıysa açıklayıcı bir mesaj göster
+            loadingEl.innerHTML = `
+                <div class="empty" style="text-align:center; padding:60px 20px;">
+                    <div class="empty-icon" style="font-size:48px; margin-bottom:16px;">⚠️</div>
+                    <div style="font-size:16px; color:#fff; margin-bottom:8px;">
+                        Personel kaydınız bulunamadı
+                    </div>
+                    <div style="font-size:13px; color:var(--text-mute); max-width:520px; margin:0 auto 20px; line-height:1.6;">
+                        Hesabınız bir personel kaydına bağlanmamış. Sebebi:<br>
+                        <strong>Backend "me" endpoint'i personnel_id, discord_id veya username döndürmüyor</strong>, 
+                        ya da Discord hesabınız hiçbir personel kaydıyla eşleşmiyor.<br><br>
+                        <span style="font-size:11px; color:var(--text-dim);">
+                            Çözüm: Backend tarafında <code style="background:rgba(0,0,0,0.4); padding:1px 6px; border-radius:3px;">/api/auth/me</code> 
+                            ile dönen user object'ine <code style="background:rgba(0,0,0,0.4); padding:1px 6px; border-radius:3px;">personnel_id</code> alanı 
+                            eklenmelidir.
+                        </span>
+                    </div>
+                    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                        <a href="/kadro.html" class="btn-login" style="display:inline-block; padding:10px 22px; text-decoration:none; width:auto;">
+                            ← Kadroya Dön
+                        </a>
+                        <a href="/home.html" class="btn-login" style="display:inline-block; padding:10px 22px; text-decoration:none; width:auto; background:rgba(255,255,255,0.08);">
+                            🏠 Ana Sayfa
+                        </a>
+                    </div>
+                </div>`;
+        } catch {
+            loadingEl.innerHTML = `
+                <div class="empty" style="text-align:center; padding:60px 20px;">
+                    <div class="empty-icon" style="font-size:48px;">⚠️</div>
+                    <div style="color:#fff; margin-top:12px;">Profil yüklenemedi</div>
+                    <a href="/home.html" style="color: var(--primary-light); margin-top: 12px; display: inline-block;">← Ana Sayfaya Dön</a>
+                </div>`;
+        }
+    })();
+}
+
+async function loadProfile() {
+    try {
+        const [profileRes, historyRes] = await Promise.all([
+            fetchPublic(`/personnel/public/${profileId}`),
+            api.get(`/personnel/${profileId}/rank-history`).catch(() => ({ data: [] })),
+        ]);
+
+        const p = profileRes.data;
+        const _rh = historyRes.data;
+        const rankHistory = Array.isArray(_rh) ? _rh : (Array.isArray(_rh?.data) ? _rh.data : []);
+        if (!p) throw new Error('Profil bulunamadı');
+        
+        const initials = (cleanName(p.ic_name) || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        const totalHours = Math.floor((p.total_duty_minutes || 0) / 60);
+        const totalMins = (p.total_duty_minutes || 0) % 60;
+        
+        // Hizmet süresi (kayıt tarihinden bugüne)
+        const serviceDays = p.created_at 
+            ? Math.floor((Date.now() - new Date(p.created_at).getTime()) / (86400000))
+            : 0;
+        
+        // Login butonu kontrolü
+        const isMyProfile = Auth.isLoggedIn() && Auth.user()?.discord_id === p.discord_id;
+        
+        document.getElementById('profileContainer').innerHTML = `
+            <!-- Profil Header (Kapak + Avatar + Rütbe) -->
+            <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; margin-bottom: 18px;">
+                ${isMyProfile ? `
+                    <div style="display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px;">
+                        <button type="button" onclick="openChangePassword()" class="btn-login" style="display:inline-flex; align-items:center; gap:6px; width:auto; padding:8px 16px; font-size:12px; cursor:pointer; background:rgba(255,255,255,0.06); border:1px solid var(--border);">
+                            🔒 Şifre Değiştir
+                        </button>
+                        ${Auth.isAdmin() ? `
+                            <a href="/settings.html" class="btn-login" style="display: inline-flex; align-items: center; gap: 6px; width: auto; padding: 8px 16px; font-size: 12px; text-decoration: none;">
+                                ⚙️ Ayarlar
+                            </a>
+                        ` : ''}
+                    </div>
+                ` : ''}
+                
+                <!-- Kapak (renkli arka plan) -->
+                <div style="height: 140px; background: linear-gradient(135deg, ${p.rank_color || 'var(--primary)'}30, ${p.rank_color || 'var(--primary)'}05); position: relative;"></div>
+                
+                <!-- Avatar + Bilgiler -->
+                <div style="padding: 0 32px 28px; display: flex; align-items: end; gap: 24px; margin-top: -52px;">
+                    <div style="width: 130px; height: 130px; border-radius: 50%; background: linear-gradient(135deg, ${p.rank_color || 'var(--primary)'}, ${p.rank_color || 'var(--primary-hover)'}); border: 4px solid var(--bg-1); display: grid; place-items: center; font-size: 48px; font-weight: 800; color: #fff; flex-shrink: 0; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+                        ${initials}
+                    </div>
+                    <div style="flex: 1; padding-bottom: 14px;">
+                        <h1 style="font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 8px;">${escapeHtml(cleanName(p.ic_name) || '—')}</h1>
+                        <div style="display: flex; align-items: center; gap: 16px; color: var(--text-mute); font-size: 13px;">
+                            <span><strong style="color: #fff;">Sicil:</strong> ${p.id}</span>
+                            ${p.callsign ? `<span>·</span><span><strong style="color: #fff;">Rozet:</strong> ${p.callsign}</span>` : ''}
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; background: ${p.rank_color}25; color: ${p.rank_color}; border: 1px solid ${p.rank_color}50; border-radius: 999px; font-size: 13px; font-weight: 700;">
+                                ◆ ${escapeHtml(p.rank_name || 'Rütbesiz')}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 5 İSTATİSTİK KARTI -->
+            <div class="profile-stats" data-profile-section style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 18px;">
+                <div data-stat-card style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 14px; padding: 22px; text-align: center;">
+                    <div style="width: 36px; height: 36px; background: rgba(99, 102, 241, 0.15); border-radius: 10px; display: grid; place-items: center; margin: 0 auto 12px; color: #a5b4fc;">📅</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #fff;">${serviceDays} gün</div>
+                    <div style="font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">HİZMET SÜRESİ</div>
+                </div>
+                <div data-stat-card style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 14px; padding: 22px; text-align: center;">
+                    <div style="width: 36px; height: 36px; background: rgba(34, 197, 94, 0.15); border-radius: 10px; display: grid; place-items: center; margin: 0 auto 12px; color: #4ade80;">⏱️</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #fff;">${totalHours > 0 ? `${totalHours}sa ${totalMins}dk` : `${totalMins} dk`}</div>
+                    <div style="font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">TOPLAM MESAİ</div>
+                </div>
+                <div data-stat-card style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 14px; padding: 22px; text-align: center;">
+                    <div style="width: 36px; height: 36px; background: rgba(168, 85, 247, 0.15); border-radius: 10px; display: grid; place-items: center; margin: 0 auto 12px; color: #c084fc;">📄</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #fff;">0</div>
+                    <div style="font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">RAPOR SAYISI</div>
+                </div>
+                <div data-stat-card style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 14px; padding: 22px; text-align: center;">
+                    <div style="width: 36px; height: 36px; background: rgba(245, 158, 11, 0.15); border-radius: 10px; display: grid; place-items: center; margin: 0 auto 12px; color: #fbbf24;">⚠️</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #fff;">0</div>
+                    <div style="font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">AKTİF UYARI</div>
+                </div>
+                <div data-stat-card style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 14px; padding: 22px; text-align: center;">
+                    <div style="width: 36px; height: 36px; background: rgba(34, 197, 94, 0.15); border-radius: 10px; display: grid; place-items: center; margin: 0 auto 12px; color: #4ade80;">✓</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #fff;">0</div>
+                    <div style="font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">PASİF UYARI</div>
+                </div>
+            </div>
+            
+            <!-- DEĞERLENDİRMELER -->
+            <div data-reviews-section style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 18px;" id="reviewsSection">
+                <h3 style="font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; margin-bottom: 18px;">
+                    <span style="color: var(--primary-light);">⭐</span> Değerlendirmeler
+                    <span id="reviewsCount" style="background: var(--primary-soft); color: var(--primary-light); padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-left: 4px;">—</span>
+                </h3>
+                <div id="reviewsContent"><div class="loading"><div class="spinner"></div></div></div>
+            </div>
+
+            <!-- LİSANSLAR + RÜTBE GEÇMİŞİ -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+                <!-- Lisanslar -->
+                <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 14px; padding: 24px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+                        <h3 style="font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                            <span style="color: var(--primary-light);">🪪</span> Lisanslar
+                        </h3>
+                        <span style="background: var(--primary-soft); color: var(--primary-light); padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;">${(p.licenses || []).length} adet</span>
+                    </div>
+                    
+                    ${(p.licenses || []).length === 0 
+                        ? '<div style="text-align: center; padding: 30px 0; color: var(--text-mute); font-size: 13px;">Henüz lisans yok</div>'
+                        : `<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            ${p.licenses.map(l => `
+                                <span style="background: ${l.color}25; color: ${l.color}; border: 1px solid ${l.color}50; padding: 8px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                    🛡️ ${escapeHtml(l.name)}
+                                </span>
+                            `).join('')}
+                        </div>`
+                    }
+                </div>
+                
+                <!-- Rütbe Geçmişi -->
+                <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 14px; padding: 24px;">
+                    <h3 style="font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; margin-bottom: 18px;">
+                        <span style="color: var(--primary-light);">📊</span> Rütbe Geçmişi
+                    </h3>
+                    
+                    <div style="position: relative; padding-left: 18px;">
+                        <div style="position: absolute; left: 4px; top: 8px; bottom: 8px; width: 2px; background: var(--border);"></div>
+                        
+                        ${renderRankHistory(p, rankHistory)}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('loadingDiv').style.display = 'none';
+        document.getElementById('profileContainer').style.display = 'block';
+
+        // Değerlendirmeleri arka planda yükle
+        loadReviews(profileId);
+    } catch (err) {
+        document.getElementById('loadingDiv').innerHTML = `
+            <div class="empty">
+                <div class="empty-icon">⚠️</div>
+                <div>${err.message}</div>
+                <a href="/kadro.html" style="color: var(--primary-light); margin-top: 12px; display: inline-block;">← Kadro'ya dön</a>
+            </div>
+        `;
+    }
+}
+
+async function loadReviews(pid) {
+    const el = document.getElementById('reviewsContent');
+    const cnt = document.getElementById('reviewsCount');
+    if (!el) return;
+    
+    // ─── GİZLİLİK KURALI ───
+    // Değerlendirmeler şu durumlarda gösterilir:
+    //   1) Kullanıcı kendi profilini görüyorsa → tüm değerlendirmeler (yine de değerlendiren ismi gizli)
+    //   2) Kullanıcı Supervisor veya HighCommand ise → tüm bilgilerle gösterilir
+    //   3) Diğer durumlarda → bölüm tamamen gizlenir
+    
+    const me = Auth.user();
+    // Olası kimlik alanlarının hepsini dene
+    const myPossibleIds = [
+        me?.personnel_id,
+        me?.id,
+        me?.pid,
+        me?.personnel?.id,
+    ].filter(x => x != null).map(String);
+    const isOwnProfile = myPossibleIds.includes(String(pid));
+    const isPrivileged = Auth.isAdmin() || (typeof Perms !== 'undefined' && (Perms.isSupervisor() || Perms.isCommand()));
+    
+    if (!isOwnProfile && !isPrivileged) {
+        // Tamamen gizle — bölümü görüntüleme
+        const section = document.querySelector('[data-reviews-section]');
+        if (section) section.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const res = await api.get(`/personnel/${pid}/reviews`).catch(() => ({ data: [] }));
+        const _rd = res.data;
+        const reviews = Array.isArray(_rd) ? _rd : (Array.isArray(_rd?.data) ? _rd.data : []);
+        cnt.textContent = `${reviews.length} adet`;
+
+        if (!reviews.length) {
+            el.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--text-mute);font-size:13px;">Henüz değerlendirme yok</div>';
+            return;
+        }
+
+        // En yeni en üstte
+        reviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        // Sadece supervisor/highcommand değerlendirenin adını görebilir;
+        // kendi profilini gören kullanıcı için isim gizli (anonim).
+        const canSeeAuthor = isPrivileged;
+        const RESULT_META = {
+            excellent: { label: 'Mükemmel', icon: '⭐', color: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)' },
+            good:      { label: 'İyi',      icon: '👍', color: '#4ade80', bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.3)' },
+            average:   { label: 'Ortalama', icon: '➡️', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.3)' },
+            poor:      { label: 'Zayıf',    icon: '⚠️', color: '#fca5a5', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.3)' },
+        };
+        const stars = n => '★'.repeat(Math.round(n||0)) + '☆'.repeat(5 - Math.round(n||0));
+
+        const canDelete = (typeof Perms !== 'undefined' && Perms.canDeleteReview()) || Auth.isAdmin();
+
+        el.innerHTML = reviews.map((r, i) => {
+            const meta = RESULT_META[r.result] || RESULT_META.average;
+            const avg = r.scores
+                ? ((r.scores.performance + r.scores.cooperation + r.scores.discipline + r.scores.communication + r.scores.overall) / 5).toFixed(1)
+                : null;
+
+            const hasDetail = r.strengths || r.weaknesses || r.action_items || r.scores;
+            const reviewKey = `review-${r.id || i}`;
+
+            return `
+                <div id="review-card-${r.id}" style="background: rgba(0,0,0,0.3); border: 1px solid ${meta.border}; border-radius: 10px; padding: 16px; margin-bottom: 10px; animation: p1-fade-up 0.3s ${i*40}ms both;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <span style="background: ${meta.bg}; color: ${meta.color}; border: 1px solid ${meta.border}; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;">${meta.icon} ${meta.label}</span>
+                        ${avg ? `<span style="font-size: 12px; color: var(--text-mute);">Puan: <strong style="color: #fbbf24;">${stars(parseFloat(avg))}</strong> <span style="color:#fff;">${avg}/5</span></span>` : ''}
+                        <span style="font-size: 11px; color: var(--text-mute); margin-left: auto;">${formatDate(r.created_at)}</span>
+                        ${canDelete ? `<button onclick="deleteReview(${pid},${r.id})" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:6px; padding:3px 10px; font-size:11px; cursor:pointer;">🗑 Sil</button>` : ''}
+                        <span style="width: 100%; font-size: 11px; color: var(--text-dim);">
+                            ${canSeeAuthor && r.reviewer_name
+                                ? `— <strong style="color:var(--text);">${escapeHtml(r.reviewer_name)}</strong>`
+                                : `<span class="review-anonymous">🔒 Anonim Değerlendiren</span>`
+                            }
+                        </span>
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-dim); line-height: 1.6; white-space: pre-wrap;">${escapeHtml(r.comment || '—')}</div>
+                    ${hasDetail ? `
+                        <button class="review-toggle" data-key="${reviewKey}" style="background: transparent; border: none; color: var(--primary-light); font-size: 12px; cursor: pointer; margin-top: 10px; padding: 4px 0; font-family: inherit;">▾ Detayları göster</button>
+                        <div id="${reviewKey}" style="display: none; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border);">
+                            ${r.scores ? `
+                                <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 1px; margin: 6px 0;">PUANLAMA</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin-bottom: 12px;">
+                                    ${[
+                                        ['Performans', r.scores.performance],
+                                        ['İş Birliği', r.scores.cooperation],
+                                        ['Disiplin', r.scores.discipline],
+                                        ['İletişim', r.scores.communication],
+                                        ['Genel', r.scores.overall],
+                                    ].map(([lbl, sc]) => `
+                                        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                                            <span style="color: var(--text-dim);">${lbl}</span>
+                                            <span style="color: #fbbf24; font-family: monospace; letter-spacing: 1px;">${stars(sc)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            ${r.strengths ? `<div style="background: rgba(34,197,94,0.06); border-left: 2px solid #4ade80; padding: 8px 10px; margin-bottom: 6px; border-radius: 0 6px 6px 0;"><div style="font-size: 10px; color: #4ade80; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">💪 Güçlü</div><div style="font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(r.strengths)}</div></div>` : ''}
+                            ${r.weaknesses ? `<div style="background: rgba(245,158,11,0.06); border-left: 2px solid #fbbf24; padding: 8px 10px; margin-bottom: 6px; border-radius: 0 6px 6px 0;"><div style="font-size: 10px; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">🎯 Gelişime açık</div><div style="font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(r.weaknesses)}</div></div>` : ''}
+                            ${r.action_items ? `<div style="background: rgba(99,102,241,0.06); border-left: 2px solid #a5b4fc; padding: 8px 10px; border-radius: 0 6px 6px 0;"><div style="font-size: 10px; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">📋 Öneriler</div><div style="font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(r.action_items)}</div></div>` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+        
+        // "Detayları göster" toggle
+        el.querySelectorAll('.review-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.key;
+                const target = document.getElementById(key);
+                if (target.style.display === 'none') {
+                    target.style.display = 'block';
+                    btn.textContent = '▴ Detayları gizle';
+                } else {
+                    target.style.display = 'none';
+                    btn.textContent = '▾ Detayları göster';
+                }
+            });
+        });
+    } catch {
+        el.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-mute);font-size:13px;">Değerlendirmeler yüklenemedi</div>';
+    }
+}
+
+function renderRankHistory(p, history) {
+    history = history || [];
+
+    const items = history.length
+        ? history.map((h, i) => ({
+            date: h.created_at,
+            rank: h.rank_name,
+            color: h.rank_color || 'var(--text-mute)',
+            action: h.action || 'rank_assigned',
+            changedBy: h.changed_by_name || null,
+            notes: h.notes || null,
+            isCurrent: i === history.length - 1,
+        }))
+        : [
+            { date: p.created_at, rank: 'Aday', color: 'var(--text-mute)', action: 'initial' },
+            { date: p.rank_updated_at || p.created_at, rank: p.rank_name || 'Rütbesiz', color: p.rank_color || 'var(--primary)', action: 'rank_assigned', isCurrent: true },
+        ];
+
+    const actionIcon = a => a === 'promoted' ? '⬆️' : a === 'demoted' ? '⬇️' : a === 'initial' ? '🟢' : '◆';
+
+    return items.map(item => `
+        <div style="position: relative; margin-bottom: 18px; padding-left: 16px;">
+            <div style="position: absolute; left: -19px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: ${item.color}; ${item.isCurrent ? `box-shadow: 0 0 0 3px ${item.color}30;` : ''}"></div>
+            <div style="font-size: 12px; color: var(--text-mute); margin-bottom: 3px;">${formatDate(item.date)}</div>
+            <div style="font-size: 14px; font-weight: 700; color: ${item.color};">${actionIcon(item.action)} ${escapeHtml(item.rank || '')}</div>
+            ${item.changedBy ? `<div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Değiştiren: ${escapeHtml(item.changedBy)}</div>` : ''}
+            ${item.notes ? `<div style="font-size: 11px; color: var(--text-dim); margin-top: 2px; font-style: italic;">${escapeHtml(item.notes)}</div>` : ''}
+        </div>
+    `).join('');
+}
+
+function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ─── Şifre Değiştir Modalı ──────────────────────────────────
+function openChangePassword() {
+    showModal({
+        title: '🔒 Şifre Değiştir',
+        subtitle: 'Yeni şifreniz en az 6 karakter olmalı',
+        body: `
+            <div style="display:flex; flex-direction:column; gap:14px;">
+                <div>
+                    <label style="font-size:12px; color:var(--text-mute); display:block; margin-bottom:6px;">Mevcut Şifre</label>
+                    <input type="password" id="cp-current" autocomplete="current-password"
+                           style="width:100%; padding:10px 12px; border-radius:8px; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:#fff; font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-size:12px; color:var(--text-mute); display:block; margin-bottom:6px;">Yeni Şifre</label>
+                    <input type="password" id="cp-new" autocomplete="new-password" minlength="6"
+                           style="width:100%; padding:10px 12px; border-radius:8px; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:#fff; font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-size:12px; color:var(--text-mute); display:block; margin-bottom:6px;">Yeni Şifre (tekrar)</label>
+                    <input type="password" id="cp-new2" autocomplete="new-password" minlength="6"
+                           style="width:100%; padding:10px 12px; border-radius:8px; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:#fff; font-size:14px;">
+                </div>
+                <div id="cp-err" style="display:none; color:#fca5a5; font-size:12px; padding:8px 12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:6px;"></div>
+            </div>
+        `,
+        buttons: [
+            { id: 'cancel', label: 'İptal', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: 'Kaydet', class: 'btn-login', onClick: submitChangePassword },
+        ],
+    });
+    // Modal açıldıktan sonra ilk inputa odaklan
+    setTimeout(() => document.getElementById('cp-current')?.focus(), 50);
+}
+
+async function submitChangePassword() {
+    const cur = document.getElementById('cp-current')?.value || '';
+    const np  = document.getElementById('cp-new')?.value || '';
+    const np2 = document.getElementById('cp-new2')?.value || '';
+    const err = document.getElementById('cp-err');
+    const show = (msg) => { if (err) { err.textContent = msg; err.style.display = 'block'; } };
+
+    if (!cur || !np || !np2) return show('Tüm alanları doldur.');
+    if (np.length < 6)        return show('Yeni şifre en az 6 karakter olmalı.');
+    if (np !== np2)           return show('Yeni şifreler eşleşmiyor.');
+    if (np === cur)           return show('Yeni şifre mevcut şifre ile aynı olamaz.');
+
+    try {
+        await Auth.changePassword(cur, np);
+        closeModal();
+        if (typeof showSuccess === 'function') showSuccess('Şifre değiştirildi ✓');
+    } catch (e) {
+        show(e.message || 'Şifre değiştirilemedi.');
+    }
+}
+
+async function deleteReview(personnelId, reviewId) {
+    if (!confirm('Bu değerlendirmeyi silmek istediğinizden emin misiniz?')) return;
+    try {
+        await api.delete(`/personnel/${personnelId}/reviews/${reviewId}`);
+        const card = document.getElementById(`review-card-${reviewId}`);
+        if (card) card.remove();
+        const remaining = document.querySelectorAll('[id^="review-card-"]').length;
+        const cnt = document.getElementById('reviewsCount');
+        if (cnt) cnt.textContent = `${remaining} adet`;
+        if (!remaining) {
+            const el = document.getElementById('reviewsContent');
+            if (el) el.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--text-mute);font-size:13px;">Henüz değerlendirme yok</div>';
+        }
+    } catch (err) {
+        alert('Silinemedi: ' + (err.message || 'Hata'));
+    }
+}
+
+if (profileId) loadProfile();
+</script>
+</body>
+</html>

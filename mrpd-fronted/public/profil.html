@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Yönlendiriliyor… · MRPD</title>
+<!--
+  Bu dosya, eski /profil.html linklerini destekleyen ufak bir redirect.
+  Canonical sayfa artık /profile.html.
+-->
+<script>
+// ?id=X ve diğer query parametrelerini de koruyarak profile.html'e yönlendir.
+window.location.replace('/profile.html' + window.location.search + window.location.hash);
+</script>
+<noscript>
+<meta http-equiv="refresh" content="0; url=/profile.html">
+</noscript>
+</head>
+<body>
+<p style="font-family: system-ui, sans-serif; text-align: center; padding: 40px; color: #888;">
+    <a href="/profile.html" style="color: #6366f1;">/profile.html sayfasına yönlendiriliyorsunuz…</a>
+</p>
+</body>
+</html>

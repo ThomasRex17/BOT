@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rütbeler · MRPD</title>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/public.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/hotfix-tur11.css?v=2">
+<style>
+/* ─── Rütbe tablosu görsel cilası ──────────────────────────── */
+.rank-row {
+    transition: background var(--dur-fast, 150ms) var(--ease-out, cubic-bezier(0.16,1,0.3,1));
+    animation: p1-fade-up 0.3s var(--ease-out) both;
+}
+.rank-row:hover { background: rgba(255,255,255,0.025); }
+.rank-row:nth-child(1)  { animation-delay: 30ms; }
+.rank-row:nth-child(2)  { animation-delay: 60ms; }
+.rank-row:nth-child(3)  { animation-delay: 90ms; }
+.rank-row:nth-child(4)  { animation-delay: 120ms; }
+.rank-row:nth-child(5)  { animation-delay: 150ms; }
+.rank-row:nth-child(6)  { animation-delay: 180ms; }
+.rank-row:nth-child(7)  { animation-delay: 210ms; }
+.rank-row:nth-child(8)  { animation-delay: 240ms; }
+.rank-row:nth-child(n+9){ animation-delay: 270ms; }
+
+/* Sıra hücresi — drag handle */
+.rank-order-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-mute);
+}
+.drag-handle {
+    cursor: grab;
+    color: var(--text-mute);
+    opacity: 0.4;
+    transition: opacity var(--dur-base) var(--ease-out);
+    user-select: none;
+    font-size: 16px;
+}
+.rank-row:hover .drag-handle { opacity: 1; }
+.drag-handle:active { cursor: grabbing; }
+.rank-row.dragging {
+    opacity: 0.5;
+    background: var(--primary-soft);
+}
+.rank-row.drag-over-top { box-shadow: 0 -2px 0 0 var(--primary) inset; }
+.rank-row.drag-over-bottom { box-shadow: 0 2px 0 0 var(--primary) inset; }
+
+/* Rütbe kartı — tabloda görsel */
+.rank-display {
+    display: flex; align-items: center; gap: 12px;
+}
+.rank-accent-bar {
+    width: 4px;
+    height: 38px;
+    background: var(--rank-color, #5865f2);
+    border-radius: 4px;
+    box-shadow: 0 0 8px var(--rank-color, #5865f2);
+}
+.rank-insignia-thumb {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--bg-3);
+    display: grid; place-items: center;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.rank-insignia-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.rank-insignia-thumb .fallback { color: var(--text-mute); font-size: 14px; }
+
+/* Telsiz kod kutusu */
+.callsign-tag {
+    display: inline-block;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+}
+
+/* Discord rol pill */
+.discord-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(88,101,242,0.15);
+    border: 1px solid rgba(88,101,242,0.3);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    color: #8fa3ff;
+    font-family: 'Courier New', monospace;
+}
+.discord-pill::before { content: '🎮'; font-family: inherit; }
+
+/* Personel sayısı pill */
+.count-pill {
+    display: inline-block;
+    background: var(--primary-soft);
+    color: var(--primary-light);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border-strong);
+}
+
+/* Aksiyon butonları */
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.icon-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-mute);
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+    display: grid; place-items: center;
+    font-size: 13px;
+    font-family: inherit;
+}
+.icon-btn:hover {
+    color: #fff;
+    border-color: var(--border-strong);
+    background: rgba(255,255,255,0.04);
+}
+.icon-btn.danger:hover {
+    color: #fca5a5;
+    border-color: rgba(239,68,68,0.5);
+    background: rgba(239,68,68,0.08);
+}
+
+/* ─── Modal: form yan yana live preview ────────────────────── */
+.rank-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 18px;
+}
+@media (max-width: 720px) {
+    .rank-modal-grid { grid-template-columns: 1fr; }
+}
+
+/* Live preview panel — sağ tarafta */
+.rank-preview {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: sticky;
+    top: 0;
+    height: fit-content;
+}
+.rank-preview-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-mute);
+    margin-bottom: 14px;
+    font-weight: 700;
+}
+.preview-card {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color var(--dur-base) var(--ease-out);
+}
+.preview-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--preview-color, #5865f2);
+    box-shadow: 0 0 12px var(--preview-color, #5865f2);
+}
+.preview-card .preview-content {
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.preview-insignia {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.preview-insignia img { width: 100%; height: 100%; object-fit: contain; }
+.preview-insignia .fallback {
+    color: var(--text-mute);
+    font-size: 18px;
+}
+.preview-text { flex: 1; min-width: 0; }
+.preview-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.preview-short {
+    font-size: 11px;
+    color: var(--text-mute);
+}
+
+.preview-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 11px;
+    border-top: 1px solid var(--border);
+}
+.preview-meta-row:first-of-type { border-top: none; }
+.preview-meta-row .label { color: var(--text-mute); }
+.preview-meta-row .value { color: #fff; font-weight: 600; }
+
+/* Color picker custom */
+.color-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.color-input-group input[type="color"] {
+    width: 48px; height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--bg-3);
+    padding: 2px;
+}
+.color-input-group input[type="text"] {
+    flex: 1;
+    font-family: 'Courier New', monospace;
+}
+
+/* Renk preset swatch'leri */
+.color-presets {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+.color-preset {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+}
+.color-preset:hover { transform: scale(1.1); }
+.color-preset.active {
+    border-color: #fff;
+    box-shadow: 0 0 8px rgba(255,255,255,0.4);
+}
+
+/* Form-row 2 sütun */
+.form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Skeleton row */
+.skel-row td { padding: 14px; }
+.skel-bar {
+    height: 14px;
+    background: linear-gradient(90deg,
+        rgba(255,255,255,0.06) 0%,
+        rgba(255,255,255,0.14) 50%,
+        rgba(255,255,255,0.06) 100%);
+    background-size: 200% 100%;
+    animation: p1-shimmer 1.4s infinite linear;
+    border-radius: 4px;
+}
+</style>
+</head>
+<body>
+
+<div id="topBarContainer"></div>
+
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="sidebar"></aside>
+    <main class="dash-main">
+        <div class="dash-header">
+            <h1>⭐ Rütbe Düzenleme</h1>
+            <p id="totalCount">Yükleniyor...</p>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-card-head">
+                <div class="table-card-title">Tüm Rütbeler</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-ghost" onclick="loadRanks()" title="Yenile">🔄</button>
+                    <button class="btn btn-primary" onclick="openCreateModal()">+ Yeni Rütbe</button>
+                </div>
+            </div>
+            
+            <table class="dt">
+                <thead>
+                    <tr>
+                        <th style="width:80px;">Sıra</th>
+                        <th>Rütbe</th>
+                        <th style="width:100px;">Telsiz</th>
+                        <th style="width:160px;">Discord Rol</th>
+                        <th style="width:90px; text-align:center;">Personel</th>
+                        <th style="width:100px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Skeleton 5 satır -->
+                    <tr class="skel-row"><td><div class="skel-bar" style="width:40px;"></div></td><td><div class="skel-bar" style="width:60%;"></div></td><td><div class="skel-bar" style="width:70px;"></div></td><td><div class="skel-bar" style="width:140px;"></div></td><td><div class="skel-bar" style="width:50px; margin:0 auto;"></div></td><td><div class="skel-bar" style="width:60px; margin-left:auto;"></div></td></tr>
+                    <tr class="skel-row"><td><div class="skel-bar" style="width:40px;"></div></td><td><div class="skel-bar" style="width:50%;"></div></td><td><div class="skel-bar" style="width:70px;"></div></td><td><div class="skel-bar" style="width:140px;"></div></td><td><div class="skel-bar" style="width:50px; margin:0 auto;"></div></td><td><div class="skel-bar" style="width:60px; margin-left:auto;"></div></td></tr>
+                    <tr class="skel-row"><td><div class="skel-bar" style="width:40px;"></div></td><td><div class="skel-bar" style="width:65%;"></div></td><td><div class="skel-bar" style="width:70px;"></div></td><td><div class="skel-bar" style="width:140px;"></div></td><td><div class="skel-bar" style="width:50px; margin:0 auto;"></div></td><td><div class="skel-bar" style="width:60px; margin-left:auto;"></div></td></tr>
+                    <tr class="skel-row"><td><div class="skel-bar" style="width:40px;"></div></td><td><div class="skel-bar" style="width:55%;"></div></td><td><div class="skel-bar" style="width:70px;"></div></td><td><div class="skel-bar" style="width:140px;"></div></td><td><div class="skel-bar" style="width:50px; margin:0 auto;"></div></td><td><div class="skel-bar" style="width:60px; margin-left:auto;"></div></td></tr>
+                    <tr class="skel-row"><td><div class="skel-bar" style="width:40px;"></div></td><td><div class="skel-bar" style="width:45%;"></div></td><td><div class="skel-bar" style="width:70px;"></div></td><td><div class="skel-bar" style="width:140px;"></div></td><td><div class="skel-bar" style="width:50px; margin:0 auto;"></div></td><td><div class="skel-bar" style="width:60px; margin-left:auto;"></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/permissions.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (!Perms.requireStaff()) { /* staff değil */ }
+if (!Perms.require(PERM.PAGE_RANKS)) { /* yönlendirildi */ }
+document.getElementById('topBarContainer').innerHTML = renderTopBar();
+document.getElementById('sidebar').innerHTML = renderSidebar('ranks');
+
+let allRanks = [];
+
+async function loadRanks() {
+    try {
+        const res = await api.get('/ranks');
+        allRanks = (res.data || []).sort((a, b) => a.rank_order - b.rank_order);
+        document.getElementById('totalCount').textContent = `Toplam ${allRanks.length} rütbe`;
+        
+        if (!allRanks.length) {
+            document.getElementById('tableBody').innerHTML = `
+                <tr><td colspan="6">
+                    <div class="empty">
+                        <div class="empty-icon">⭐</div>
+                        <div>Henüz rütbe tanımlanmamış.</div>
+                        <button class="btn btn-primary" onclick="openCreateModal()" style="margin-top: 12px;">+ İlk Rütbeyi Ekle</button>
+                    </div>
+                </td></tr>
+            `;
+            return;
+        }
+        
+        document.getElementById('tableBody').innerHTML = allRanks.map(r => renderRow(r)).join('');
+        setupDragAndDrop();
+    } catch (err) {
+        document.getElementById('tableBody').innerHTML =
+            `<tr><td colspan="6"><div class="empty"><div class="empty-icon">⚠️</div>${escapeHtml(err.message)}</div></td></tr>`;
+    }
+}
+
+function renderRow(r) {
+    const color = r.color || '#5865f2';
+    const insigniaHtml = r.insignia_url
+        ? `<img src="${escapeHtml(r.insignia_url)}" alt="" onerror="this.outerHTML='<div class=&quot;fallback&quot;>⭐</div>'">`
+        : `<div class="fallback">⭐</div>`;
+    
+    return `
+        <tr class="rank-row" data-rank-id="${r.id}" draggable="true">
+            <td>
+                <div class="rank-order-cell">
+                    <span class="drag-handle" title="Sürükle">⠿</span>
+                    <strong>#${r.rank_order}</strong>
+                </div>
+            </td>
+            <td>
+                <div class="rank-display">
+                    <div class="rank-accent-bar" style="--rank-color: ${color};"></div>
+                    <div class="rank-insignia-thumb">${insigniaHtml}</div>
+                    <div>
+                        <div style="font-weight: 700; color: #fff;">${escapeHtml(r.name)}</div>
+                        ${r.short_name ? `<div style="font-size: 11px; color: var(--text-mute);">${escapeHtml(r.short_name)}</div>` : ''}
+                    </div>
+                </div>
+            </td>
+            <td>${r.callsign_min ? `<span class="callsign-tag">[${r.callsign_min}-${r.callsign_max}]</span>` : '<span style="color: var(--text-mute); font-size: 12px;">manuel</span>'}</td>
+            <td>${r.discord_role_id ? `<span class="discord-pill" title="${escapeHtml(r.discord_role_id)}">${r.discord_role_id.substring(0,12)}…</span>` : '<span style="color: var(--text-mute); font-size: 12px;">—</span>'}</td>
+            <td style="text-align: center;"><span class="count-pill">${r.personnel_count || 0}</span></td>
+            <td>
+                <div class="row-actions">
+                    <button class="icon-btn" onclick='openEditModal(${JSON.stringify(r).replace(/'/g, "&#39;")})' title="Düzenle">✎</button>
+                    <button class="icon-btn danger" onclick="deleteRank(${r.id}, '${escapeHtml((r.name||'').replace(/'/g, "\\'"))}', ${r.personnel_count || 0})" title="Sil">✕</button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// ─── DRAG & DROP SIRALAMA ──────────────────────────────────
+// Bir satırı tutup başka bir satırın üstüne/altına bıraktığında
+// sırasını değiştirir, sonra backend'e PATCH /ranks/reorder atar.
+let draggedId = null;
+
+function setupDragAndDrop() {
+    document.querySelectorAll('.rank-row').forEach(row => {
+        row.addEventListener('dragstart', e => {
+            draggedId = parseInt(row.dataset.rankId);
+            row.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        row.addEventListener('dragend', () => {
+            row.classList.remove('dragging');
+            document.querySelectorAll('.rank-row').forEach(r => {
+                r.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+        });
+        row.addEventListener('dragover', e => {
+            e.preventDefault();
+            const rect = row.getBoundingClientRect();
+            const before = (e.clientY - rect.top) < rect.height / 2;
+            document.querySelectorAll('.rank-row').forEach(r => {
+                r.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+            row.classList.add(before ? 'drag-over-top' : 'drag-over-bottom');
+        });
+        row.addEventListener('drop', async e => {
+            e.preventDefault();
+            const targetId = parseInt(row.dataset.rankId);
+            if (draggedId === targetId) return;
+            const rect = row.getBoundingClientRect();
+            const before = (e.clientY - rect.top) < rect.height / 2;
+            await reorderRank(draggedId, targetId, before);
+        });
+    });
+}
+
+async function reorderRank(draggedId, targetId, before) {
+    // Yeni sırayı oluştur (memory'de)
+    const newOrder = [...allRanks];
+    const fromIdx = newOrder.findIndex(r => r.id === draggedId);
+    const targetIdx = newOrder.findIndex(r => r.id === targetId);
+    if (fromIdx < 0 || targetIdx < 0) return;
+    
+    const [moved] = newOrder.splice(fromIdx, 1);
+    let insertIdx = newOrder.findIndex(r => r.id === targetId);
+    if (!before) insertIdx++;
+    newOrder.splice(insertIdx, 0, moved);
+    
+    // Yeni rank_order'ları hesapla (10, 20, 30, ... 10'luk artışla)
+    const updates = newOrder.map((r, i) => ({ id: r.id, rank_order: (i + 1) * 10 }));
+    
+    try {
+        // Backend bulk reorder endpoint'i — yoksa tek tek PUT atabiliriz
+        try {
+            await api.patch('/ranks/reorder', { items: updates });
+        } catch {
+            // Fallback: her birine ayrı PUT
+            await Promise.all(updates.map(u =>
+                api.put(`/ranks/${u.id}`, { rank_order: u.rank_order })
+            ));
+        }
+        showSuccess('Sıralama güncellendi');
+        loadRanks();
+    } catch (err) {
+        showError('Sıralama kaydedilemedi: ' + err.message);
+    }
+}
+
+// ─── MODAL: form + live preview ────────────────────────────
+// Renk preset paleti
+const COLOR_PRESETS = [
+    '#f59e0b', '#f97316', '#ef4444', '#ec4899',
+    '#a855f7', '#8b5cf6', '#6366f1', '#3b82f6',
+    '#06b6d4', '#10b981', '#22c55e', '#84cc16',
+    '#eab308', '#94a3b8', '#fff', '#5865f2',
+];
+
+function rankFormHtml(r) {
+    const init = {
+        name: r?.name || '',
+        short_name: r?.short_name || '',
+        rank_order: r?.rank_order ?? 99,
+        insignia_url: r?.insignia_url || '',
+        color: r?.color || '#5865f2',
+        description: r?.description || '',
+        callsign_min: r?.callsign_min || '',
+        callsign_max: r?.callsign_max || '',
+        discord_role_id: r?.discord_role_id || '',
+    };
+    
+    return `
+        <div class="rank-modal-grid">
+            <!-- SOL: FORM -->
+            <form id="rankForm">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Ad *</label>
+                        <input name="name" id="rf_name" required maxlength="64" value="${escapeHtml(init.name)}" placeholder="örn: Captain" />
+                    </div>
+                    <div class="form-group">
+                        <label>Slug</label>
+                        <input name="short_name" id="rf_short" maxlength="32" value="${escapeHtml(init.short_name)}" placeholder="captain" />
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Sıra <span style="color:var(--text-mute); font-weight:400;">(0 = en üst, sayı büyüdükçe aşağı)</span></label>
+                    <input name="rank_order" id="rf_order" type="number" value="${init.rank_order}" />
+                </div>
+                
+                <div class="form-group">
+                    <label>Insignia / Arma URL <span style="color:var(--text-mute); font-weight:400;">(opsiyonel)</span></label>
+                    <input name="insignia_url" id="rf_insignia" type="url" value="${escapeHtml(init.insignia_url)}" placeholder="https://i.ibb.co/Q7Vh0dTH/Captain.png" />
+                </div>
+                
+                <div class="form-group">
+                    <label>Renk</label>
+                    <div class="color-input-group">
+                        <input type="color" id="rf_colorPicker" value="${init.color}" />
+                        <input type="text" name="color" id="rf_colorText" value="${init.color}" placeholder="#5865f2" maxlength="7" />
+                    </div>
+                    <div class="color-presets" id="rf_colorPresets">
+                        ${COLOR_PRESETS.map(c => `<div class="color-preset ${c.toLowerCase() === init.color.toLowerCase() ? 'active' : ''}" style="background: ${c};" data-color="${c}" title="${c}"></div>`).join('')}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Açıklama</label>
+                    <input name="description" id="rf_desc" maxlength="200" value="${escapeHtml(init.description)}" placeholder="Örn: Departman üst yönetimi" />
+                </div>
+                
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Telsiz Min</label>
+                        <input name="callsign_min" id="rf_csMin" type="number" value="${init.callsign_min}" placeholder="101" />
+                    </div>
+                    <div class="form-group">
+                        <label>Telsiz Max</label>
+                        <input name="callsign_max" id="rf_csMax" type="number" value="${init.callsign_max}" placeholder="103" />
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Discord Rol ID <span style="color:var(--text-mute); font-weight:400;">(opsiyonel)</span></label>
+                    <input name="discord_role_id" id="rf_discord" maxlength="32" value="${escapeHtml(init.discord_role_id)}" placeholder="1361790198421393640" />
+                    <small style="color: var(--text-mute); font-size: 11px; display: block; margin-top: 4px;">Polis rütbesi değişince eski rol kaldırılır, yeni atanır (tanımlıysa).</small>
+                </div>
+            </form>
+            
+            <!-- SAĞ: LIVE PREVIEW -->
+            <div class="rank-preview">
+                <div class="rank-preview-title">CANLI ÖNİZLEME</div>
+                <div class="preview-card" id="previewCard" style="--preview-color: ${init.color};">
+                    <div class="preview-content">
+                        <div class="preview-insignia" id="previewInsignia">
+                            ${init.insignia_url
+                                ? `<img src="${escapeHtml(init.insignia_url)}" alt="" onerror="this.outerHTML='<div class=&quot;fallback&quot;>⭐</div>'">`
+                                : `<div class="fallback">⭐</div>`}
+                        </div>
+                        <div class="preview-text">
+                            <div class="preview-name" id="previewName">${escapeHtml(init.name || 'Rütbe Adı')}</div>
+                            <div class="preview-short" id="previewShort">${escapeHtml(init.short_name || '—')}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="preview-meta-row">
+                    <span class="label">Telsiz</span>
+                    <span class="value" id="previewCallsign">${init.callsign_min ? `[${init.callsign_min}-${init.callsign_max}]` : 'manuel'}</span>
+                </div>
+                <div class="preview-meta-row">
+                    <span class="label">Sıra</span>
+                    <span class="value" id="previewOrder">#${init.rank_order}</span>
+                </div>
+                <div class="preview-meta-row">
+                    <span class="label">Discord</span>
+                    <span class="value" id="previewDiscord" style="font-size:10px; font-family:'Courier New', monospace;">${init.discord_role_id ? init.discord_role_id.substring(0,10)+'…' : 'yok'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function setupModalInteractions(isEdit) {
+    setTimeout(() => {
+        // Live preview elementleri
+        const cp = document.getElementById('rf_colorPicker');
+        const ct = document.getElementById('rf_colorText');
+        const nm = document.getElementById('rf_name');
+        const sh = document.getElementById('rf_short');
+        const ins = document.getElementById('rf_insignia');
+        const cs1 = document.getElementById('rf_csMin');
+        const cs2 = document.getElementById('rf_csMax');
+        const ord = document.getElementById('rf_order');
+        const dis = document.getElementById('rf_discord');
+        
+        const pCard = document.getElementById('previewCard');
+        const pName = document.getElementById('previewName');
+        const pShort = document.getElementById('previewShort');
+        const pInsignia = document.getElementById('previewInsignia');
+        const pCall = document.getElementById('previewCallsign');
+        const pOrd = document.getElementById('previewOrder');
+        const pDis = document.getElementById('previewDiscord');
+        
+        // Slug auto-generate: ad yazılırken slug elle değiştirilmediyse otomatik üret
+        let slugManuallyChanged = isEdit; // edit'te dokunma
+        sh.addEventListener('input', () => { slugManuallyChanged = true; });
+        function slugify(s) {
+            return s.toLowerCase()
+                .replace(/ı/g, 'i').replace(/ç/g, 'c').replace(/ö/g, 'o')
+                .replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ğ/g, 'g')
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_|_$/g, '');
+        }
+        
+        // Color picker iki yönlü senkron + preview
+        function setColor(hex) {
+            if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+            ct.value = hex;
+            cp.value = hex;
+            pCard.style.setProperty('--preview-color', hex);
+            document.querySelectorAll('.color-preset').forEach(p => {
+                p.classList.toggle('active', p.dataset.color.toLowerCase() === hex.toLowerCase());
+            });
+        }
+        cp.addEventListener('input', () => setColor(cp.value));
+        ct.addEventListener('input', () => {
+            if (/^#[0-9a-fA-F]{6}$/.test(ct.value)) setColor(ct.value);
+        });
+        document.querySelectorAll('.color-preset').forEach(p => {
+            p.addEventListener('click', () => setColor(p.dataset.color));
+        });
+        
+        // Name + slug + preview
+        nm.addEventListener('input', () => {
+            pName.textContent = nm.value || 'Rütbe Adı';
+            if (!slugManuallyChanged) {
+                sh.value = slugify(nm.value);
+                pShort.textContent = sh.value || '—';
+            }
+        });
+        sh.addEventListener('input', () => {
+            pShort.textContent = sh.value || '—';
+        });
+        
+        // Insignia preview — URL değiştiğinde test et
+        let insigniaTimer = null;
+        ins.addEventListener('input', () => {
+            clearTimeout(insigniaTimer);
+            insigniaTimer = setTimeout(() => {
+                if (ins.value.trim()) {
+                    pInsignia.innerHTML = `<img src="${escapeHtml(ins.value.trim())}" alt="" onerror="this.outerHTML='<div class=&quot;fallback&quot;>⭐</div>'">`;
+                } else {
+                    pInsignia.innerHTML = `<div class="fallback">⭐</div>`;
+                }
+            }, 350);
+        });
+        
+        // Callsign preview + validation
+        function updateCallsign() {
+            const min = cs1.value, max = cs2.value;
+            if (min && max) {
+                const minN = parseInt(min), maxN = parseInt(max);
+                if (minN > maxN) {
+                    cs1.style.borderColor = '#ef4444';
+                    cs2.style.borderColor = '#ef4444';
+                } else {
+                    cs1.style.borderColor = '';
+                    cs2.style.borderColor = '';
+                }
+                pCall.textContent = `[${min}-${max}]`;
+            } else if (min) {
+                pCall.textContent = `[${min}-?]`;
+            } else {
+                pCall.textContent = 'manuel';
+            }
+        }
+        cs1.addEventListener('input', updateCallsign);
+        cs2.addEventListener('input', updateCallsign);
+        
+        // Order preview
+        ord.addEventListener('input', () => {
+            pOrd.textContent = `#${ord.value || '?'}`;
+        });
+        
+        // Discord preview
+        dis.addEventListener('input', () => {
+            const v = dis.value.trim();
+            pDis.textContent = v ? v.substring(0, 10) + '…' : 'yok';
+        });
+    }, 80);
+}
+
+function openCreateModal() {
+    showModal({
+        title: '⭐ Polis Rütbesi Ekle',
+        size: 'lg',
+        body: rankFormHtml(null),
+        buttons: [
+            { id: 'cancel', label: 'Vazgeç', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: '+ Oluştur', class: 'btn-primary', onClick: () => saveRank(null) },
+        ],
+    });
+    setupModalInteractions(false);
+}
+
+function openEditModal(r) {
+    showModal({
+        title: `✎ ${escapeHtml(r.name)} — Düzenle`,
+        size: 'lg',
+        body: rankFormHtml(r),
+        buttons: [
+            { id: 'cancel', label: 'Vazgeç', class: 'btn-ghost', onClick: closeModal },
+            { id: 'save', label: '💾 Değişiklikleri Kaydet', class: 'btn-primary', onClick: () => saveRank(r.id) },
+        ],
+    });
+    setupModalInteractions(true);
+}
+
+async function saveRank(id) {
+    const fd = new FormData(document.getElementById('rankForm'));
+    const data = {
+        name: (fd.get('name') || '').trim(),
+        short_name: (fd.get('short_name') || '').trim() || null,
+        rank_order: parseInt(fd.get('rank_order')) || 99,
+        color: fd.get('color') || '#5865f2',
+        callsign_min: fd.get('callsign_min') ? parseInt(fd.get('callsign_min')) : null,
+        callsign_max: fd.get('callsign_max') ? parseInt(fd.get('callsign_max')) : null,
+        discord_role_id: (fd.get('discord_role_id') || '').trim() || null,
+        insignia_url: (fd.get('insignia_url') || '').trim() || null,
+        description: (fd.get('description') || '').trim() || null,
+    };
+    
+    // Validasyon
+    if (!data.name) { showError('Ad gerekli'); return; }
+    if (!/^#[0-9a-fA-F]{6}$/.test(data.color)) {
+        showError('Renk kodu geçersiz (örn: #ff0000)');
+        return;
+    }
+    if (data.callsign_min && data.callsign_max && data.callsign_min > data.callsign_max) {
+        showError('Telsiz Min, Max\'tan büyük olamaz');
+        return;
+    }
+    if (data.insignia_url && !/^https?:\/\//i.test(data.insignia_url)) {
+        showError('Insignia URL http(s):// ile başlamalı');
+        return;
+    }
+    if (data.discord_role_id && !/^\d{17,20}$/.test(data.discord_role_id)) {
+        showError('Discord rol ID 17-20 haneli sayı olmalı');
+        return;
+    }
+    
+    try {
+        if (id) await api.put(`/ranks/${id}`, data);
+        else await api.post('/ranks', data);
+        showSuccess(id ? 'Rütbe güncellendi' : 'Rütbe oluşturuldu');
+        closeModal();
+        loadRanks();
+    } catch (err) { showError(err.message); }
+}
+
+function deleteRank(id, name, personnelCount) {
+    let warning = '';
+    if (personnelCount > 0) {
+        warning = `<br><br><strong style="color:#fbbf24;">⚠ Bu rütbede ${personnelCount} personel var.</strong><br>Silindiğinde bu personelin rütbesi boş kalır.`;
+    }
+    showConfirm(
+        `"${escapeHtml(name)}" rütbesini silmek istediğine emin misin?${warning}`,
+        async () => {
+            try {
+                await api.delete(`/ranks/${id}`);
+                showSuccess('Rütbe silindi');
+                loadRanks();
+            } catch (err) { showError(err.message); }
+        }
+    );
+}
+
+loadRanks();
+</script>
+</body>
+</html>
