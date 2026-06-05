@@ -110,9 +110,20 @@ router.get('/active', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // YENİ: Mesai Bitir (Siteden -> Bota)
-router.post('/end', authenticate, authorize('admin', 'officer'), asyncHandler(async (req, res) => {
+router.post('/end', authenticate, asyncHandler(async (req, res) => {
     const { personnel_id } = req.body;
     if (!personnel_id) throw new ValidationError('personnel_id gerekli');
+
+    // Kullanıcının kendi personel kaydını kontrol et
+    const userPersonnel = db.prepare('SELECT id FROM personnel WHERE user_id = ?').get(req.user.id);
+    
+    // Admin veya officer rolü varsa herkesin mesaisini bitirebilir
+    // Normal kullanıcılar sadece kendi mesailerini bitirebilir
+    if (req.user.role !== 'admin' && req.user.role !== 'officer') {
+        if (!userPersonnel || userPersonnel.id !== personnel_id) {
+            throw new ForbiddenError('Sadece kendi mesainizi bitirebilirsiniz');
+        }
+    }
 
     const session = db.prepare(`SELECT * FROM duty_sessions WHERE personnel_id = ? AND ended_at IS NULL`).get(personnel_id);
     if (!session) throw new ValidationError('Bu personelin aktif mesaisi yok');
@@ -160,7 +171,7 @@ if (endDutyPerson?.discord_id) {
     ok(res, { duration_minutes: durationMinutes }, `Mesai sonlandırıldı (${durationMinutes} dk)`);
 }));
 
-router.post('/add-time', authenticate, authorize('admin'), asyncHandler(async (req, res) => {
+router.post('/add-time', authenticate, authorize('admin', 'officer'), asyncHandler(async (req, res) => {
     const { personnel_id, minutes } = req.body;
     if (!personnel_id || !minutes) throw new ValidationError('personnel_id ve minutes gerekli');
 

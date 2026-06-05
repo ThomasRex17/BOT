@@ -54,11 +54,25 @@ function authenticate(req, res, next) {
 /**
  * Sadece belirli rollere izin verir
  * Kullanım: authorize('admin', 'officer')
+ * 
+ * Özel: 'self' - Kullanıcı sadece kendi kaydını değiştirebilir
  */
 function authorize(...allowedRoles) {
     return (req, res, next) => {
         if (!req.user) {
             return next(new AuthError('Önce giriş yapmalısınız'));
+        }
+        
+        // 'self' kontrolü - kullanıcı sadece kendi kaydını görebilir/düzenleyebilir
+        if (allowedRoles.includes('self')) {
+            // req.params.id veya req.body.personnel_id ile kullanıcının personnel_id'sini karşılaştır
+            const targetId = req.params.id || req.body.personnel_id;
+            if (targetId) {
+                const userPersonnel = db.prepare('SELECT id FROM personnel WHERE user_id = ?').get(req.user.id);
+                if (userPersonnel && userPersonnel.id == targetId) {
+                    return next();
+                }
+            }
         }
         
         if (!allowedRoles.includes(req.user.role)) {

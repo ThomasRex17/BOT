@@ -51,9 +51,9 @@
                 <div class="table-card-head">
                     <div>
                         <div class="table-card-title">⚡ Aktif Mesailer</div>
-                        <p style="font-size: 11px; color: var(--text-mute); margin-top: 2px;">Şu an görevde olan personel</p>
+                        <p style="font-size: 11px; color: var(--text-mute); margin-top: 2px;" id="activeSubtitle">Şu an görevde olan personel</p>
                     </div>
-                    <button class="btn btn-primary btn-sm" onclick="openStartDutyModal()">+ Mesai Başlat</button>
+                    <button class="btn btn-primary btn-sm" id="startDutyBtn" onclick="openStartDutyModal()" style="display: none;">+ Mesai Başlat</button>
                 </div>
                 <div id="activeListLoading" class="loading"><div class="spinner"></div></div>
                 <div id="activeList" style="display: none;"></div>
@@ -89,7 +89,20 @@ let allPersonnel = [];
 let leaderboardData = [];
 
 async function loadAll() {
-    await Promise.all([loadPersonnelList(), loadActive(), loadLeaderboard()]);
+    // Kullanıcı bilgilerini kontrol et ve UI'ı ayarla
+    const user = Auth.user();
+    const isAdminOrOfficer = user && (user.role === 'admin' || user.role === 'officer');
+    
+    // Admin ve Officer'lar için mesai başlat butonunu göster
+    if (isAdminOrOfficer) {
+        document.getElementById('startDutyBtn').style.display = 'inline-flex';
+        document.getElementById('activeSubtitle').textContent = 'Şu an görevde olan personel';
+        await loadPersonnelList();
+    } else {
+        document.getElementById('activeSubtitle').textContent = 'Kendi mesai durumunuz';
+    }
+    
+    await Promise.all([loadActive(), loadLeaderboard()]);
 }
 
 async function loadPersonnelList() {
@@ -107,13 +120,30 @@ async function loadActive() {
         document.getElementById('statActive').textContent = sessions.length;
 
         const c = document.getElementById('activeList');
-        if (!sessions.length) {
-            c.innerHTML = `<div class="empty"><div class="empty-icon">😴</div>Şu an mesaide kimse yok</div>`;
+        const user = Auth.user();
+        const isAdminOrOfficer = user && (user.role === 'admin' || user.role === 'officer');
+        
+        // Normal trooper'lar sadece kendi mesailerini görebilir
+        let filteredSessions = sessions;
+        if (!isAdminOrOfficer && user && user.personnel_id) {
+            filteredSessions = sessions.filter(s => (s.personnel_id || s.id) === user.personnel_id);
+        }
+        
+        if (!filteredSessions.length) {
+            if (isAdminOrOfficer) {
+                c.innerHTML = `<div class="empty"><div class="empty-icon">😴</div>Şu an mesaide kimse yok</div>`;
+            } else {
+                c.innerHTML = `<div class="empty"><div class="empty-icon">💤</div>Aktif mesainiz yok</div>`;
+            }
         } else {
-            c.innerHTML = sessions.map(s => {
+            c.innerHTML = filteredSessions.map(s => {
                 const sessionId = s.session_id || s.id;
                 const personnelId = s.personnel_id || s.id;
                 const displayName = cleanName(s.ic_name) || '?';
+                
+                // Normal trooper'lar sadece kendi mesailerini bitirebilir
+                const canEnd = isAdminOrOfficer || (user.personnel_id === personnelId);
+                
                 return `
                 <div style="display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border);">
                     <div class="av av-sm" style="background: linear-gradient(135deg, #22c55e, #16a34a);">${displayName[0].toUpperCase()}</div>
@@ -126,7 +156,7 @@ async function loadActive() {
                     </div>
                     <div style="text-align: right;">
                         <div style="font-weight: 700; color: #4ade80;">${formatDuration(s.elapsed_minutes)}</div>
-                        <button class="btn btn-danger btn-xs" style="margin-top: 3px;" onclick="endDuty(${sessionId}, ${personnelId}, '${escapeHtml(displayName).replace(/'/g, '')}')">Bitir</button>
+                        ${canEnd ? `<button class="btn btn-danger btn-xs" style="margin-top: 3px;" onclick="endDuty(${sessionId}, ${personnelId}, '${escapeHtml(displayName).replace(/'/g, '')}')">Bitir</button>` : ''}
                     </div>
                 </div>
                 `;
@@ -148,6 +178,9 @@ async function loadLeaderboard() {
         document.getElementById('statTop').textContent = cleanName(leaderboardData[0]?.ic_name) || '—';
         
         const c = document.getElementById('leaderboardList');
+        const user = Auth.user();
+        const isAdminOrOfficer = user && (user.role === 'admin' || user.role === 'officer');
+        
         if (!leaderboardData.length) {
             c.innerHTML = '<div class="empty"><div class="empty-text">Henüz mesai kaydı yok</div></div>';
         } else {
@@ -155,6 +188,10 @@ async function loadLeaderboard() {
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
                 const displayName = cleanName(p.ic_name) || '?';
                 const sessions = p.total_sessions ?? p.session_count ?? 0;
+                
+                // Sadece admin ve officer'lar süre ekleyebilir
+                const showAddTimeButton = isAdminOrOfficer;
+                
                 return `
                     <div style="display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--border);">
                         <div style="width: 30px; text-align: center; font-size: 15px; font-weight: 700; color: var(--text-mute);">${medal}</div>
@@ -168,7 +205,7 @@ async function loadLeaderboard() {
                         </div>
                         <div style="text-align: right;">
                             <div style="font-weight: 700; color: #4ade80;">${formatDuration(p.total_minutes)}</div>
-                            <button class="btn btn-ghost btn-xs" style="margin-top: 2px;" onclick="addTime(${p.id}, '${escapeHtml(displayName).replace(/'/g, '')}')">+ Süre</button>
+                            ${showAddTimeButton ? `<button class="btn btn-ghost btn-xs" style="margin-top: 2px;" onclick="addTime(${p.id}, '${escapeHtml(displayName).replace(/'/g, '')}')">+ Süre</button>` : ''}
                         </div>
                     </div>
                 `;

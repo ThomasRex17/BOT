@@ -106,8 +106,8 @@ function _isLead(r) {
     return _any(r, 'lead trooper', 'lead officer');
 }
 function _isOfficer(r) {
-    // Şeriflikte Trooper, Poliste Officer en alt rütbe
-    return _any(r, 'trooper i', 'trooper ii', 'trooper iii', 'officer i', 'officer ii', 'officer iii', 'police officer', 'deputy');
+    // Trooper rütbeleri
+    return _any(r, 'trooper i', 'trooper ii', 'trooper iii', 'trooper 1', 'trooper 2', 'trooper 3', 'trooper 3+1', 'police officer', 'deputy');
 }
 function _isIAD(r) {
     return _any(r, 'iad', 'internal affairs');

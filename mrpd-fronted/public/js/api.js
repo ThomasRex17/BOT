@@ -29,8 +29,8 @@ const TIER_NAMES = {
 // Kendi rütbe isimlerine göre düzenle.
 const RANK_TIER_MAP = {
     yonetim: ['captain', 'kaptan', 'lieutenant', 'komiser', 'commander', 'chief', 'şef', 'sef'],
-    amir:    ['sergeant', 'sergant', 'çavuş', 'cavus', 'detective', 'dedektif', 'amir', 'supervisor'],
-    memur:   ['officer', 'memur', 'corporal', 'onbaşı', 'onbasi', 'deputy'],
+    amir:    ['sergeant', 'sergant', 'çavuş', 'cavus', 'detective', 'dedektif', 'amir', 'supervisor', 'acting supervisor'],
+    memur:   ['trooper', 'memur', 'corporal', 'onbaşı', 'onbasi', 'deputy'],
     aday:    ['cadet', 'aday', 'trainee', 'stajyer', 'rookie'],
 };
 
@@ -288,7 +288,7 @@ const Auth = {
         }
         
         // 5) Eski role alanından yedek tahmin
-        if (u.role === 'officer') return 'memur';
+        if (u.role === 'trooper') return 'memur';
         if (u.role === 'supervisor') return 'amir';
         if (u.role === 'command') return 'yonetim';
         
@@ -317,7 +317,7 @@ const Auth = {
     },
     
     // Officer = en az Memur kademesi
-    isOfficer() {
+    isTrooper() {
         return this.hasTier('memur');
     },
 };
